@@ -1,0 +1,14 @@
+build/
+.gradle/
+.idea/
+.vscode/
+*.iml
+out/
+.git/
+.DS_Store
+.env
+deploy/.env
+.build.gradle.kts.unused
+.settings.gradle.kts.unused
+HELP.md
+target/

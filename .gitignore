@@ -1,0 +1,17 @@
+.gradle
+build/
+!gradle/wrapper/gradle-wrapper.jar
+.idea/
+.vscode/
+*.iml
+out/
+.env
+.DS_Store
+
+# OS / IDE
+*.swp
+*.log
+
+# Spring Boot
+HELP.md
+target/

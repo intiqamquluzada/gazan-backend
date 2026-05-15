@@ -1,0 +1,14 @@
+# ─────────────────────────────────────────────────────────────
+# Backend image — uses a pre-built fat-jar so server doesn't need
+# to download Maven dependencies. The deploy script runs
+# `./gradlew bootJar` on the dev machine before shipping.
+# ─────────────────────────────────────────────────────────────
+FROM eclipse-temurin:21-jre-alpine
+
+WORKDIR /app
+COPY app.jar app.jar
+
+EXPOSE 8080
+ENV JAVA_OPTS="-XX:MaxRAMPercentage=75 -XX:+ExitOnOutOfMemoryError"
+
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar /app/app.jar"]

@@ -1,0 +1,96 @@
+package az.qazan.backend.user.application;
+
+import az.qazan.backend.common.exception.ConflictException;
+import az.qazan.backend.common.exception.ErrorCode;
+import az.qazan.backend.common.exception.NotFoundException;
+import az.qazan.backend.common.exception.UnauthorizedException;
+import az.qazan.backend.user.api.dto.ChangePasswordRequest;
+import az.qazan.backend.user.api.dto.UpdateProfileRequest;
+import az.qazan.backend.user.domain.AppLocale;
+import az.qazan.backend.user.domain.Role;
+import az.qazan.backend.user.domain.User;
+import az.qazan.backend.user.domain.UserRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.UUID;
+
+/**
+ * All write paths against the {@link User} aggregate. Read paths are
+ * also funnelled here so we have one place to add caching later.
+ */
+@Service
+@RequiredArgsConstructor
+public class UserService {
+
+    private final UserRepository repository;
+    private final PasswordEncoder passwordEncoder;
+
+    @Transactional(readOnly = true)
+    public User getById(UUID id) {
+        return repository.findById(id)
+                .orElseThrow(() -> NotFoundException.of(ErrorCode.USER_NOT_FOUND));
+    }
+
+    @Transactional(readOnly = true)
+    public User getByEmail(String email) {
+        return repository.findByEmailIgnoreCase(email)
+                .orElseThrow(() -> NotFoundException.of(ErrorCode.USER_NOT_FOUND));
+    }
+
+    @Transactional
+    public User register(String email,
+                         String rawPassword,
+                         String fullName,
+                         String phone,
+                         Role role,
+                         AppLocale locale) {
+        if (repository.existsByEmailIgnoreCase(email)) {
+            throw new ConflictException(ErrorCode.AUTH_EMAIL_TAKEN);
+        }
+        User u = User.builder()
+                .email(email.trim().toLowerCase())
+                .passwordHash(passwordEncoder.encode(rawPassword))
+                .fullName(fullName.trim())
+                .phone(phone)
+                .role(role == null ? Role.CUSTOMER : role)
+                .locale(locale == null ? AppLocale.AZ : locale)
+                .active(true)
+                .build();
+        return repository.save(u);
+    }
+
+    @Transactional
+    public User updateProfile(UUID userId, UpdateProfileRequest req) {
+        User u = getById(userId);
+        if (req.fullName() != null) u.setFullName(req.fullName().trim());
+        if (req.phone() != null) u.setPhone(req.phone().trim());
+        if (req.avatarUrl() != null) u.setAvatarUrl(req.avatarUrl().trim());
+        if (req.businessName() != null) u.setBusinessName(req.businessName().trim());
+        if (req.locale() != null) u.setLocale(req.locale());
+        return u;
+    }
+
+    @Transactional
+    public void changePassword(UUID userId, ChangePasswordRequest req) {
+        User u = getById(userId);
+        if (!passwordEncoder.matches(req.currentPassword(), u.getPasswordHash())) {
+            throw new UnauthorizedException(ErrorCode.USER_PASSWORD_MISMATCH);
+        }
+        u.setPasswordHash(passwordEncoder.encode(req.newPassword()));
+    }
+
+    @Transactional
+    public void deactivate(UUID userId) {
+        User u = getById(userId);
+        u.setActive(false);
+    }
+
+    @Transactional
+    public void recordLogin(User u) {
+        u.touchLastLogin();
+        repository.save(u);
+    }
+}
