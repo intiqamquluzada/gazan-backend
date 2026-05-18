@@ -53,8 +53,11 @@ cd "$MOBILE_DIR"
 if [ ! -d web ]; then
   flutter create . --platforms=web,ios,android,macos >/dev/null
 fi
+# Wipe build cache to force regeneration of the web plugin registrant.
+# Without this, Flutter keeps referencing removed packages and dart2js fails.
+flutter clean >/dev/null
 flutter pub get
-flutter build web --release \
+flutter build web --release --no-wasm-dry-run \
   --dart-define=API_BASE_URL=http://"$SERVER_IP"
 
 # ────────────────────── 3. Pack artifact ───────────────────────────
@@ -92,9 +95,22 @@ echo
 echo "▸ Running setup on server (will prompt for SSH password) ..."
 ssh "$SERVER" 'bash -s' <<'REMOTE'
 set -euo pipefail
+
+# Preserve secrets between deploys (Postgres volume persists, so the
+# password in .env must match what the DB user was created with).
+ENV_BACKUP=/root/.qazan-env.bak
+if [ -f /opt/qazan/gazan-backend/deploy/.env ]; then
+  cp /opt/qazan/gazan-backend/deploy/.env "$ENV_BACKUP"
+fi
+
 rm -rf /opt/qazan
 mkdir -p /opt/qazan
 tar xzf /root/qazan-deploy.tar.gz -C /opt/qazan
+
+if [ -f "$ENV_BACKUP" ]; then
+  cp "$ENV_BACKUP" /opt/qazan/gazan-backend/deploy/.env
+fi
+
 cd /opt/qazan/gazan-backend
 chmod +x deploy/server-setup.sh
 bash deploy/server-setup.sh
