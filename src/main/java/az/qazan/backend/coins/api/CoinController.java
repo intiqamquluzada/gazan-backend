@@ -1,6 +1,7 @@
 package az.qazan.backend.coins.api;
 
 import az.qazan.backend.coins.api.dto.CoinSummaryResponse;
+import az.qazan.backend.coins.api.dto.GrantCoinsRequest;
 import az.qazan.backend.coins.api.dto.SpendCoinsRequest;
 import az.qazan.backend.coins.application.CoinService;
 import az.qazan.backend.common.security.AppUserPrincipal;
@@ -10,6 +11,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -42,5 +44,13 @@ public class CoinController {
             @Valid @RequestBody SpendCoinsRequest body
     ) {
         return coins.spend(user.getId(), body.companyId(), body.amount(), body.note());
+    }
+
+    @Operation(summary = "Business owner credits coins to a customer (after a scan)")
+    @PreAuthorize("hasRole('BUSINESS_OWNER') or hasRole('ADMIN')")
+    @PostMapping("/grant")
+    public CoinSummaryResponse grant(@Valid @RequestBody GrantCoinsRequest body) {
+        return coins.grant(
+                body.customerId(), body.companyId(), body.amount(), body.note());
     }
 }
