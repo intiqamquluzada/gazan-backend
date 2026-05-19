@@ -39,7 +39,8 @@ public class CoinService {
         List<CompanyBalanceResponse> perCompany = ledger.balancesByCompany(userId)
                 .stream()
                 .map(p -> new CompanyBalanceResponse(
-                        p.getCompanyId(), p.getCompanyName(), p.getBalance()))
+                        p.getCompanyId(), p.getCompanyName(),
+                        p.getLogoUrl(), p.getBalance()))
                 .toList();
         List<CoinTxnResponse> recent = ledger
                 .findTop15ByUserIdOrderByCreatedAtDesc(userId)

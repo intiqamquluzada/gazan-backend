@@ -27,13 +27,14 @@ public interface CoinTransactionRepository
     long balanceOfAtCompany(@Param("uid") UUID uid, @Param("cid") UUID cid);
 
     @Query("""
-        select c.id   as companyId,
-               c.name as companyName,
+        select c.id      as companyId,
+               c.name    as companyName,
+               c.logoUrl as logoUrl,
                coalesce(sum(t.amount), 0) as balance
           from CoinTransaction t
           join t.company c
          where t.user.id = :uid
-         group by c.id, c.name
+         group by c.id, c.name, c.logoUrl
          order by sum(t.amount) desc
         """)
     List<CompanyBalanceProjection> balancesByCompany(@Param("uid") UUID uid);

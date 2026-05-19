@@ -8,5 +8,7 @@ public interface CompanyBalanceProjection {
 
     String getCompanyName();
 
+    String getLogoUrl();
+
     long getBalance();
 }

@@ -68,6 +68,19 @@ public class DemoPhotoSeeder {
                     U + "1441986300917-64674bd600d8" + Q,
                     U + "1517248135467-4c7edcad34c4" + Q));
 
+    /** Square-cropped logo / profile picture per category. */
+    private static final String QSQ = "?auto=format&fit=crop&w=400&h=400&q=70";
+
+    private static final Map<BusinessCategory, String> LOGO_BY_CATEGORY = Map.of(
+            BusinessCategory.COFFEE, U + "1495474472287-4d71bcdd2085" + QSQ,
+            BusinessCategory.RESTAURANT, U + "1552566626-52f8b828add9" + QSQ,
+            BusinessCategory.BEAUTY, U + "1560066984-138dadb4c035" + QSQ,
+            BusinessCategory.BARBER, U + "1503951914875-452162b0f3f1" + QSQ,
+            BusinessCategory.CARWASH, U + "1607860108855-64acf2078ed9" + QSQ,
+            BusinessCategory.FITNESS, U + "1534438327276-14e5300c3a48" + QSQ,
+            BusinessCategory.BAKERY, U + "1509440159596-0249088772ff" + QSQ,
+            BusinessCategory.OTHER, U + "1441986300917-64674bd600d8" + QSQ);
+
     private final CompanyRepository companies;
 
     @Bean
@@ -76,17 +89,32 @@ public class DemoPhotoSeeder {
             int touched = 0;
             for (Company c : companies.findAll()) {
                 if (!DEMO_NAMES.contains(c.getName())) continue;
-                String existing = c.getPhotoUrls();
-                if (existing != null && !existing.isBlank()) continue;
-                List<String> urls = BY_CATEGORY.getOrDefault(
-                        c.getCategory(),
-                        BY_CATEGORY.get(BusinessCategory.OTHER));
-                c.setPhotoUrls(String.join("\n", urls));
-                companies.save(c);
-                touched++;
+                boolean changed = false;
+
+                String photos = c.getPhotoUrls();
+                if (photos == null || photos.isBlank()) {
+                    List<String> urls = BY_CATEGORY.getOrDefault(
+                            c.getCategory(),
+                            BY_CATEGORY.get(BusinessCategory.OTHER));
+                    c.setPhotoUrls(String.join("\n", urls));
+                    changed = true;
+                }
+
+                String logo = c.getLogoUrl();
+                if (logo == null || logo.isBlank()) {
+                    c.setLogoUrl(LOGO_BY_CATEGORY.getOrDefault(
+                            c.getCategory(),
+                            LOGO_BY_CATEGORY.get(BusinessCategory.OTHER)));
+                    changed = true;
+                }
+
+                if (changed) {
+                    companies.save(c);
+                    touched++;
+                }
             }
             if (touched > 0) {
-                log.info("Demo photos seeded for {} companies.", touched);
+                log.info("Demo photos/logos seeded for {} companies.", touched);
             } else {
                 log.info("Demo photos already present — skipping photo seed.");
             }

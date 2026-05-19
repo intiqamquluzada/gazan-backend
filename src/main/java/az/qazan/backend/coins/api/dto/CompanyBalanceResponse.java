@@ -5,6 +5,7 @@ import java.util.UUID;
 public record CompanyBalanceResponse(
         UUID companyId,
         String companyName,
+        String logoUrl,
         long balance
 ) {
 }
