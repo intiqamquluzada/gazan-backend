@@ -9,6 +9,14 @@ public record UpdateCompanyRequest(
         BusinessCategory category,
         @Size(max = 8) String logoEmoji,
         Long coverColorHex,
-        @Size(max = 240) String address
+        @Size(max = 240) String address,
+        @Size(max = 32) String phone,
+        @Size(max = 64) String instagram,
+        @Size(max = 120) String workingHours,
+        Double latitude,
+        Double longitude,
+        @Size(max = 255) String amenities,
+        @Size(max = 2000) String photoUrls,
+        @Size(max = 512) String menuUrl
 ) {
 }

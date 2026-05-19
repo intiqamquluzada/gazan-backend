@@ -77,6 +77,14 @@ public class CompanyService {
         if (req.logoEmoji() != null) c.setLogoEmoji(req.logoEmoji());
         if (req.coverColorHex() != null) c.setCoverColorHex(req.coverColorHex());
         if (req.address() != null) c.setAddress(req.address());
+        if (req.phone() != null) c.setPhone(req.phone());
+        if (req.instagram() != null) c.setInstagram(req.instagram());
+        if (req.workingHours() != null) c.setWorkingHours(req.workingHours());
+        if (req.latitude() != null) c.setLatitude(req.latitude());
+        if (req.longitude() != null) c.setLongitude(req.longitude());
+        if (req.amenities() != null) c.setAmenities(req.amenities());
+        if (req.photoUrls() != null) c.setPhotoUrls(req.photoUrls());
+        if (req.menuUrl() != null) c.setMenuUrl(req.menuUrl());
         return c;
     }
 

@@ -18,7 +18,15 @@ public class CompanyMapper {
                 c.getAddress(),
                 c.getRating(),
                 c.getReviewCount(),
-                c.isFeatured()
+                c.isFeatured(),
+                c.getPhone(),
+                c.getInstagram(),
+                c.getWorkingHours(),
+                c.getLatitude(),
+                c.getLongitude(),
+                c.getAmenities(),
+                c.getPhotoUrls(),
+                c.getMenuUrl()
         );
     }
 }

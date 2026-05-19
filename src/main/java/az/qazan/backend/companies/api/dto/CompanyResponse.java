@@ -14,6 +14,14 @@ public record CompanyResponse(
         String address,
         Double rating,
         int reviewCount,
-        boolean featured
+        boolean featured,
+        String phone,
+        String instagram,
+        String workingHours,
+        Double latitude,
+        Double longitude,
+        String amenities,
+        String photoUrls,
+        String menuUrl
 ) {
 }

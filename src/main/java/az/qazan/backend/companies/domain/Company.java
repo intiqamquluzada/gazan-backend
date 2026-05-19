@@ -66,4 +66,32 @@ public class Company extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "owner_id")
     private User owner;
+
+    // ── Editable profile (managed by the owner) ────────────────────────
+
+    @Column(name = "phone", length = 32)
+    private String phone;
+
+    @Column(name = "instagram", length = 64)
+    private String instagram;
+
+    @Column(name = "working_hours", length = 120)
+    private String workingHours;
+
+    @Column(name = "latitude")
+    private Double latitude;
+
+    @Column(name = "longitude")
+    private Double longitude;
+
+    /** CSV of amenity codes, e.g. WIFI,WORKSPACE,MEETING,GARDEN,PARKING,VEGAN,PET */
+    @Column(name = "amenities", length = 255)
+    private String amenities;
+
+    /** Newline-separated image URLs for the profile photo carousel. */
+    @Column(name = "photo_urls", length = 2000)
+    private String photoUrls;
+
+    @Column(name = "menu_url", length = 512)
+    private String menuUrl;
 }
