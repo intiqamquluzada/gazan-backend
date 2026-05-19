@@ -98,4 +98,8 @@ public class Company extends BaseEntity {
     /** Coins the customer earns per 1 currency unit spent (e.g. 0.1 → 1000 ₼ = 100 coin). */
     @Column(name = "coin_rate")
     private Double coinRate;
+
+    /** Uploaded logo / profile picture URL. Null → brand monogram fallback. */
+    @Column(name = "logo_url", length = 512)
+    private String logoUrl;
 }

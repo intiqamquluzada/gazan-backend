@@ -18,6 +18,7 @@ public record UpdateCompanyRequest(
         @Size(max = 255) String amenities,
         @Size(max = 2000) String photoUrls,
         @Size(max = 512) String menuUrl,
-        Double coinRate
+        Double coinRate,
+        @Size(max = 512) String logoUrl
 ) {
 }

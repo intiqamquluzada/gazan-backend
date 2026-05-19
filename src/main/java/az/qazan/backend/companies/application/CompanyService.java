@@ -86,6 +86,7 @@ public class CompanyService {
         if (req.photoUrls() != null) c.setPhotoUrls(req.photoUrls());
         if (req.menuUrl() != null) c.setMenuUrl(req.menuUrl());
         if (req.coinRate() != null) c.setCoinRate(req.coinRate());
+        if (req.logoUrl() != null) c.setLogoUrl(req.logoUrl());
         return c;
     }
 

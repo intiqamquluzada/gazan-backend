@@ -23,6 +23,7 @@ public record CompanyResponse(
         String amenities,
         String photoUrls,
         String menuUrl,
-        Double coinRate
+        Double coinRate,
+        String logoUrl
 ) {
 }
