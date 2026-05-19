@@ -2,6 +2,8 @@ package az.qazan.backend.coins.api;
 
 import az.qazan.backend.coins.api.dto.CoinSummaryResponse;
 import az.qazan.backend.coins.api.dto.GrantCoinsRequest;
+import az.qazan.backend.coins.api.dto.RedeemRewardRequest;
+import az.qazan.backend.coins.api.dto.RedeemResultResponse;
 import az.qazan.backend.coins.api.dto.SpendCoinsRequest;
 import az.qazan.backend.coins.application.CoinService;
 import az.qazan.backend.common.security.AppUserPrincipal;
@@ -52,5 +54,16 @@ public class CoinController {
     public CoinSummaryResponse grant(@Valid @RequestBody GrantCoinsRequest body) {
         return coins.grant(
                 body.customerId(), body.companyId(), body.amount(), body.note());
+    }
+
+    @Operation(summary = "Cashier confirms a customer redeeming a coin reward")
+    @PreAuthorize("hasRole('BUSINESS_OWNER') or hasRole('ADMIN')")
+    @PostMapping("/redeem-reward")
+    public RedeemResultResponse redeemReward(
+            @CurrentUser AppUserPrincipal me,
+            @Valid @RequestBody RedeemRewardRequest body
+    ) {
+        return coins.redeemReward(
+                me.getId(), body.customerId(), body.rewardId());
     }
 }

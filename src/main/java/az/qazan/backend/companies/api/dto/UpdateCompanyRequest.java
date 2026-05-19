@@ -17,6 +17,7 @@ public record UpdateCompanyRequest(
         Double longitude,
         @Size(max = 255) String amenities,
         @Size(max = 2000) String photoUrls,
-        @Size(max = 512) String menuUrl
+        @Size(max = 512) String menuUrl,
+        Double coinRate
 ) {
 }

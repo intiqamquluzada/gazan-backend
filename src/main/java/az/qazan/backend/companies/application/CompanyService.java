@@ -85,6 +85,7 @@ public class CompanyService {
         if (req.amenities() != null) c.setAmenities(req.amenities());
         if (req.photoUrls() != null) c.setPhotoUrls(req.photoUrls());
         if (req.menuUrl() != null) c.setMenuUrl(req.menuUrl());
+        if (req.coinRate() != null) c.setCoinRate(req.coinRate());
         return c;
     }
 

@@ -26,7 +26,8 @@ public class CompanyMapper {
                 c.getLongitude(),
                 c.getAmenities(),
                 c.getPhotoUrls(),
-                c.getMenuUrl()
+                c.getMenuUrl(),
+                c.getCoinRate()
         );
     }
 }

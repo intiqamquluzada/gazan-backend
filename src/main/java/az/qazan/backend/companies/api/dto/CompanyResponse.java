@@ -22,6 +22,7 @@ public record CompanyResponse(
         Double longitude,
         String amenities,
         String photoUrls,
-        String menuUrl
+        String menuUrl,
+        Double coinRate
 ) {
 }

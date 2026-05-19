@@ -3,12 +3,16 @@ package az.qazan.backend.coins.application;
 import az.qazan.backend.coins.api.dto.CoinSummaryResponse;
 import az.qazan.backend.coins.api.dto.CoinTxnResponse;
 import az.qazan.backend.coins.api.dto.CompanyBalanceResponse;
+import az.qazan.backend.coins.api.dto.RedeemResultResponse;
+import az.qazan.backend.coins.domain.CoinReward;
+import az.qazan.backend.coins.domain.CoinRewardRepository;
 import az.qazan.backend.coins.domain.CoinTransaction;
 import az.qazan.backend.coins.domain.CoinTransactionRepository;
 import az.qazan.backend.coins.domain.CoinTransactionType;
 import az.qazan.backend.common.exception.BadRequestException;
 import az.qazan.backend.common.exception.ErrorCode;
 import az.qazan.backend.common.exception.NotFoundException;
+import az.qazan.backend.common.exception.UnauthorizedException;
 import az.qazan.backend.companies.domain.Company;
 import az.qazan.backend.companies.domain.CompanyRepository;
 import az.qazan.backend.user.domain.User;
@@ -25,6 +29,7 @@ import java.util.UUID;
 public class CoinService {
 
     private final CoinTransactionRepository ledger;
+    private final CoinRewardRepository rewards;
     private final UserRepository users;
     private final CompanyRepository companies;
 
@@ -67,6 +72,35 @@ public class CoinService {
         }
         record(userId, companyId, -amount, CoinTransactionType.SPEND, note);
         return summary(userId);
+    }
+
+    /**
+     * Cashier confirms a customer redeeming a coin reward. Coins are spent
+     * against the balance the customer holds AT that business.
+     */
+    @Transactional
+    public RedeemResultResponse redeemReward(UUID ownerId, UUID customerId,
+                                             UUID rewardId) {
+        CoinReward reward = rewards.findById(rewardId)
+                .orElseThrow(() -> NotFoundException.of(ErrorCode.NOT_FOUND));
+        Company company = reward.getCompany();
+        if (company.getOwner() == null
+                || !company.getOwner().getId().equals(ownerId)) {
+            throw new UnauthorizedException(ErrorCode.FORBIDDEN);
+        }
+        if (!reward.isActive()) {
+            throw new BadRequestException(ErrorCode.BAD_REQUEST);
+        }
+        long balance = ledger.balanceOfAtCompany(customerId, company.getId());
+        if (balance < reward.getCoinCost()) {
+            throw new BadRequestException(ErrorCode.BAD_REQUEST);
+        }
+        record(customerId, company.getId(), -reward.getCoinCost(),
+                CoinTransactionType.SPEND, "Mükafat: " + reward.getTitle());
+        return new RedeemResultResponse(
+                reward.getTitle(),
+                reward.getCoinCost(),
+                balance - reward.getCoinCost());
     }
 
     private void record(UUID userId, UUID companyId, int signedAmount,

@@ -20,6 +20,13 @@ public interface CoinTransactionRepository
     long balanceOf(@Param("uid") UUID uid);
 
     @Query("""
+        select coalesce(sum(t.amount), 0)
+          from CoinTransaction t
+         where t.user.id = :uid and t.company.id = :cid
+        """)
+    long balanceOfAtCompany(@Param("uid") UUID uid, @Param("cid") UUID cid);
+
+    @Query("""
         select c.id   as companyId,
                c.name as companyName,
                coalesce(sum(t.amount), 0) as balance

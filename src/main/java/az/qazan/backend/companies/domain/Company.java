@@ -94,4 +94,8 @@ public class Company extends BaseEntity {
 
     @Column(name = "menu_url", length = 512)
     private String menuUrl;
+
+    /** Coins the customer earns per 1 currency unit spent (e.g. 0.1 → 1000 ₼ = 100 coin). */
+    @Column(name = "coin_rate")
+    private Double coinRate;
 }
