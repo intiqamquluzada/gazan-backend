@@ -1,5 +1,6 @@
 package az.qazan.backend.coins.api;
 
+import az.qazan.backend.coins.api.dto.CoinRewardCatalogResponse;
 import az.qazan.backend.coins.api.dto.CoinRewardResponse;
 import az.qazan.backend.coins.api.dto.CreateCoinRewardRequest;
 import az.qazan.backend.coins.application.CoinRewardService;
@@ -44,6 +45,12 @@ public class CoinRewardController {
     ) {
         return service.listForCompany(companyId, activeOnly).stream()
                 .map(CoinRewardController::toResponse).toList();
+    }
+
+    @Operation(summary = "Platform-wide active reward catalog (customer wallet)")
+    @GetMapping("/coin-rewards")
+    public List<CoinRewardCatalogResponse> catalog() {
+        return service.catalog();
     }
 
     @Operation(summary = "Create a coin reward (business owner)")

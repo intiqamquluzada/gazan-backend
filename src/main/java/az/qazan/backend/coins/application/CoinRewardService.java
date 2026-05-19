@@ -1,5 +1,6 @@
 package az.qazan.backend.coins.application;
 
+import az.qazan.backend.coins.api.dto.CoinRewardCatalogResponse;
 import az.qazan.backend.coins.domain.CoinReward;
 import az.qazan.backend.coins.domain.CoinRewardRepository;
 import az.qazan.backend.common.exception.ErrorCode;
@@ -26,6 +27,14 @@ public class CoinRewardService {
         return activeOnly
                 ? rewards.findAllByCompanyIdAndActiveTrueOrderByCoinCostAsc(companyId)
                 : rewards.findAllByCompanyIdOrderByCoinCostAsc(companyId);
+    }
+
+    /** Platform-wide active reward catalog for the customer wallet. */
+    @Transactional(readOnly = true)
+    public List<CoinRewardCatalogResponse> catalog() {
+        return rewards.findAllActiveWithCompany().stream()
+                .map(CoinRewardCatalogResponse::from)
+                .toList();
     }
 
     @Transactional
