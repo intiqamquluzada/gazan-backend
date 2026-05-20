@@ -15,3 +15,6 @@ out/
 # Spring Boot
 HELP.md
 target/
+
+# Eclipse/IDE build output
+bin/
