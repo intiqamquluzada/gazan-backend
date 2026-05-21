@@ -11,8 +11,9 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * A single broadcast pushed to every user from the admin panel. Read
- * state is tracked separately per user in {@link NotificationRead}.
+ * A notification: either a global broadcast (when {@code userId} is
+ * null) or targeted to one user (e.g. "your reward was used"). Read
+ * state is tracked per user in {@link NotificationRead}.
  */
 @Entity
 @Table(name = "notifications")
@@ -28,4 +29,8 @@ public class Notification extends BaseEntity {
 
     @Column(name = "body", nullable = false, length = 2000)
     private String body;
+
+    /** Null = broadcast (everyone sees it). Set = targeted to this user. */
+    @Column(name = "user_id")
+    private java.util.UUID userId;
 }

@@ -30,6 +30,16 @@ public class NotificationService {
         return NotificationResponse.of(n, false);
     }
 
+    /** Targeted notification to one user (e.g. "your reward was used"). */
+    @Transactional
+    public Notification notifyUser(UUID userId, String title, String body) {
+        return notifications.save(Notification.builder()
+                .userId(userId)
+                .title(title.trim())
+                .body(body.trim())
+                .build());
+    }
+
     /** Admin's list of everything sent (newest first). */
     @Transactional(readOnly = true)
     public List<NotificationResponse> recent() {
@@ -38,11 +48,11 @@ public class NotificationService {
                 .toList();
     }
 
-    /** A user's inbox: newest 50 with their personal read flag. */
+    /** A user's inbox: broadcasts + their targeted notifications. */
     @Transactional(readOnly = true)
     public List<NotificationResponse> inbox(UUID userId) {
         Set<UUID> readIds = reads.readNotificationIds(userId);
-        return notifications.findTop50ByOrderByCreatedAtDesc().stream()
+        return notifications.inboxFor(userId).stream()
                 .map(n -> NotificationResponse.of(n, readIds.contains(n.getId())))
                 .toList();
     }

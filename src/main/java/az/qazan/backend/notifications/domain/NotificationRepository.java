@@ -9,11 +9,21 @@ import java.util.UUID;
 
 public interface NotificationRepository extends JpaRepository<Notification, UUID> {
 
+    /** Admin sent list — every row, newest first (broadcast + targeted). */
     List<Notification> findTop50ByOrderByCreatedAtDesc();
+
+    /** A user's inbox: broadcasts + notifications targeted to them. */
+    @Query("""
+        select n from Notification n
+         where (n.userId is null or n.userId = :uid)
+         order by n.createdAt desc
+        """)
+    List<Notification> inboxFor(@Param("uid") UUID userId);
 
     @Query("""
         select count(n) from Notification n
-         where n.id not in (
+         where (n.userId is null or n.userId = :uid)
+           and n.id not in (
              select r.notification.id from NotificationRead r
               where r.userId = :uid)
         """)
@@ -21,7 +31,8 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
 
     @Query("""
         select n from Notification n
-         where n.id not in (
+         where (n.userId is null or n.userId = :uid)
+           and n.id not in (
              select r.notification.id from NotificationRead r
               where r.userId = :uid)
         """)
