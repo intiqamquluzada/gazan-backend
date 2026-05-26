@@ -39,6 +39,28 @@ public class Company extends BaseEntity {
     @Column(name = "tagline", length = 240)
     private String tagline;
 
+    // Optional per-language overrides. `name` / `tagline` above stay the
+    // Azerbaijani default; whenever a translated value is missing for a
+    // requested locale the mapper falls back to the AZ field.
+
+    @Column(name = "name_en", length = 120)
+    private String nameEn;
+
+    @Column(name = "name_ru", length = 120)
+    private String nameRu;
+
+    @Column(name = "name_tr", length = 120)
+    private String nameTr;
+
+    @Column(name = "tagline_en", length = 240)
+    private String taglineEn;
+
+    @Column(name = "tagline_ru", length = 240)
+    private String taglineRu;
+
+    @Column(name = "tagline_tr", length = 240)
+    private String taglineTr;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "category", nullable = false, length = 32)
     private BusinessCategory category;

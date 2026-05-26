@@ -87,7 +87,20 @@ public class CompanyService {
         if (req.menuUrl() != null) c.setMenuUrl(req.menuUrl());
         if (req.coinRate() != null) c.setCoinRate(req.coinRate());
         if (req.logoUrl() != null) c.setLogoUrl(req.logoUrl());
+        // Per-language overrides (each independent; null = no change,
+        // empty string clears the translation back to AZ fallback).
+        if (req.nameEn() != null) c.setNameEn(blankToNull(req.nameEn()));
+        if (req.nameRu() != null) c.setNameRu(blankToNull(req.nameRu()));
+        if (req.nameTr() != null) c.setNameTr(blankToNull(req.nameTr()));
+        if (req.taglineEn() != null) c.setTaglineEn(blankToNull(req.taglineEn()));
+        if (req.taglineRu() != null) c.setTaglineRu(blankToNull(req.taglineRu()));
+        if (req.taglineTr() != null) c.setTaglineTr(blankToNull(req.taglineTr()));
         return c;
+    }
+
+    private static String blankToNull(String s) {
+        String trimmed = s.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 
     @Transactional

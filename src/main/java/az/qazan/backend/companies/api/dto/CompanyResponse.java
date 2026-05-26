@@ -24,6 +24,17 @@ public record CompanyResponse(
         String photoUrls,
         String menuUrl,
         Double coinRate,
-        String logoUrl
+        String logoUrl,
+
+        // Raw per-language translations. `name` / `tagline` above are
+        // already localized for the caller's Accept-Language; these
+        // fields let the business profile editor show what's currently
+        // set for every language.
+        String nameEn,
+        String nameRu,
+        String nameTr,
+        String taglineEn,
+        String taglineRu,
+        String taglineTr
 ) {
 }

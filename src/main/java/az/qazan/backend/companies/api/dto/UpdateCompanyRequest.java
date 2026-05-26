@@ -19,6 +19,15 @@ public record UpdateCompanyRequest(
         @Size(max = 2000) String photoUrls,
         @Size(max = 512) String menuUrl,
         Double coinRate,
-        @Size(max = 512) String logoUrl
+        @Size(max = 512) String logoUrl,
+
+        // Optional translations — set per language; absent values fall
+        // back to the Azerbaijani defaults above on read.
+        @Size(max = 120) String nameEn,
+        @Size(max = 120) String nameRu,
+        @Size(max = 120) String nameTr,
+        @Size(max = 240) String taglineEn,
+        @Size(max = 240) String taglineRu,
+        @Size(max = 240) String taglineTr
 ) {
 }
