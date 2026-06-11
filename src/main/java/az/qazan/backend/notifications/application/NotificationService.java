@@ -5,6 +5,7 @@ import az.qazan.backend.notifications.domain.Notification;
 import az.qazan.backend.notifications.domain.NotificationRead;
 import az.qazan.backend.notifications.domain.NotificationReadRepository;
 import az.qazan.backend.notifications.domain.NotificationRepository;
+import az.qazan.backend.push.application.PushService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +20,7 @@ public class NotificationService {
 
     private final NotificationRepository notifications;
     private final NotificationReadRepository reads;
+    private final PushService push;
 
     /** Admin broadcasts to every user (one row, read state is per-user). */
     @Transactional
@@ -27,17 +29,21 @@ public class NotificationService {
                 .title(title.trim())
                 .body(body.trim())
                 .build());
+        // Also deliver to physical devices (no-op until FCM is configured).
+        push.pushToAll(n.getTitle(), n.getBody());
         return NotificationResponse.of(n, false);
     }
 
     /** Targeted notification to one user (e.g. "your reward was used"). */
     @Transactional
     public Notification notifyUser(UUID userId, String title, String body) {
-        return notifications.save(Notification.builder()
+        Notification n = notifications.save(Notification.builder()
                 .userId(userId)
                 .title(title.trim())
                 .body(body.trim())
                 .build());
+        push.pushToUser(userId, n.getTitle(), n.getBody());
+        return n;
     }
 
     /** Admin's list of everything sent (newest first). */

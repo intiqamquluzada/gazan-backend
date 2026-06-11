@@ -26,6 +26,7 @@ public enum ErrorCode {
     AUTH_TOKEN_INVALID("error.auth.token_invalid", HttpStatus.UNAUTHORIZED),
     AUTH_REFRESH_INVALID("error.auth.refresh_invalid", HttpStatus.UNAUTHORIZED),
     AUTH_ACCOUNT_DISABLED("error.auth.account_disabled", HttpStatus.FORBIDDEN),
+    AUTH_RESET_CODE_INVALID("error.auth.reset_code_invalid", HttpStatus.BAD_REQUEST),
 
     // ── User ───────────────────────────────────────────────────
     USER_NOT_FOUND("error.user.not_found", HttpStatus.NOT_FOUND),

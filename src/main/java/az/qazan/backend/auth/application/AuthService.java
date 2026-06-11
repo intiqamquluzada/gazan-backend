@@ -48,6 +48,7 @@ public class AuthService {
                 req.password(),
                 req.fullName(),
                 req.phone(),
+                req.birthDate(),
                 req.role(),
                 req.locale()
         );

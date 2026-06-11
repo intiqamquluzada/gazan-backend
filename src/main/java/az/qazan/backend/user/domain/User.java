@@ -14,6 +14,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.Instant;
+import java.time.LocalDate;
 
 @Entity
 @Table(
@@ -42,6 +43,10 @@ public class User extends BaseEntity {
 
     @Column(name = "phone", length = 32)
     private String phone;
+
+    /** Optional date of birth, collected at registration. */
+    @Column(name = "birth_date")
+    private LocalDate birthDate;
 
     @Column(name = "avatar_url", length = 512)
     private String avatarUrl;

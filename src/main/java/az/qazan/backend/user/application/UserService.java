@@ -1,5 +1,6 @@
 package az.qazan.backend.user.application;
 
+import az.qazan.backend.auth.domain.RefreshTokenRepository;
 import az.qazan.backend.common.exception.ConflictException;
 import az.qazan.backend.common.exception.ErrorCode;
 import az.qazan.backend.common.exception.NotFoundException;
@@ -15,6 +16,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
+import java.time.LocalDate;
 import java.util.UUID;
 
 /**
@@ -26,6 +29,7 @@ import java.util.UUID;
 public class UserService {
 
     private final UserRepository repository;
+    private final RefreshTokenRepository refreshRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Transactional(readOnly = true)
@@ -45,6 +49,7 @@ public class UserService {
                          String rawPassword,
                          String fullName,
                          String phone,
+                         LocalDate birthDate,
                          Role role,
                          AppLocale locale) {
         if (repository.existsByEmailIgnoreCase(email)) {
@@ -55,6 +60,7 @@ public class UserService {
                 .passwordHash(passwordEncoder.encode(rawPassword))
                 .fullName(fullName.trim())
                 .phone(phone)
+                .birthDate(birthDate)
                 .role(role == null ? Role.CUSTOMER : role)
                 .locale(locale == null ? AppLocale.AZ : locale)
                 .active(true)
@@ -82,9 +88,24 @@ public class UserService {
         u.setPasswordHash(passwordEncoder.encode(req.newPassword()));
     }
 
+    /**
+     * Permanently deletes the account in a referential-integrity-safe way:
+     * every session is revoked and all personally identifiable data is
+     * stripped (GDPR / Apple App Store guideline 5.1.1(v)). The row itself
+     * is retained — anonymized — so ledger/audit foreign keys (coins,
+     * reward claims, loyalty cards) stay intact and the original email is
+     * freed for re-registration.
+     */
     @Transactional
     public void deactivate(UUID userId) {
         User u = getById(userId);
+        refreshRepository.revokeAllForUser(u, Instant.now());
+        u.setEmail("deleted+" + u.getId() + "@qazan.az");
+        u.setFullName("Silinmiş istifadəçi");
+        u.setPhone(null);
+        u.setAvatarUrl(null);
+        u.setBusinessName(null);
+        u.setBirthDate(null);
         u.setActive(false);
     }
 

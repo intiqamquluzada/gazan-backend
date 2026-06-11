@@ -4,6 +4,7 @@ import az.qazan.backend.user.domain.AppLocale;
 import az.qazan.backend.user.domain.Role;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.UUID;
 
 /**
@@ -15,6 +16,7 @@ public record UserResponse(
         String email,
         String fullName,
         String phone,
+        LocalDate birthDate,
         String avatarUrl,
         String businessName,
         Role role,

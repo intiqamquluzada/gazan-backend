@@ -18,6 +18,7 @@ public class UserMapper {
                 u.getEmail(),
                 u.getFullName(),
                 u.getPhone(),
+                u.getBirthDate(),
                 u.getAvatarUrl(),
                 u.getBusinessName(),
                 u.getRole(),
