@@ -4,8 +4,11 @@ import az.qazan.backend.user.domain.AppLocale;
 import az.qazan.backend.user.domain.Role;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Past;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+
+import java.time.LocalDate;
 
 public record RegisterRequest(
         @NotBlank(message = "{validation.email.required}")
@@ -23,6 +26,9 @@ public record RegisterRequest(
 
         @Pattern(regexp = "^\\+?[0-9 ()-]{6,32}$", message = "{validation.user.phone.format}")
         String phone,
+
+        @Past(message = "{validation.user.birth_date.past}")
+        LocalDate birthDate,
 
         Role role,
 

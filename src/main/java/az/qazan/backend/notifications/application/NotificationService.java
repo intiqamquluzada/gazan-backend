@@ -12,6 +12,7 @@ import az.qazan.backend.notifications.domain.NotificationReadRepository;
 import az.qazan.backend.notifications.domain.NotificationRepository;
 import az.qazan.backend.notifications.domain.NotificationStatus;
 import az.qazan.backend.notifications.domain.NotificationTarget;
+import az.qazan.backend.push.application.PushService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -29,6 +30,7 @@ public class NotificationService {
     private final NotificationRepository notifications;
     private final NotificationReadRepository reads;
     private final CompanyRepository companies;
+    private final PushService push;
 
     // ── Admin authoring ─────────────────────────────────────────────
 
@@ -53,7 +55,10 @@ public class NotificationService {
         n.setApprovedBy(adminId);
         n.setApprovedAt(OffsetDateTime.now());
         n.setSubmittedBy(adminId);
-        return NotificationResponse.of(notifications.save(n), false);
+        Notification saved = notifications.save(n);
+        // Approved on creation → deliver to physical devices now.
+        deliverPush(saved);
+        return NotificationResponse.of(saved, false);
     }
 
     /**
@@ -71,7 +76,10 @@ public class NotificationService {
                 .status(NotificationStatus.APPROVED)
                 .approvedAt(OffsetDateTime.now())
                 .build();
-        return notifications.save(n);
+        Notification saved = notifications.save(n);
+        // Also deliver to the user's registered devices.
+        push.pushToUser(userId, saved.getTitle(), saved.getBody());
+        return saved;
     }
 
     // ── Business-owner submissions ──────────────────────────────────
@@ -79,7 +87,8 @@ public class NotificationService {
     /**
      * Business owner asks to push a notification to the customers
      * holding a loyalty card at their company. Saved as {@code PENDING}
-     * — an admin reviews it before delivery.
+     * — an admin reviews it before delivery. No push is sent until an
+     * admin approves it.
      */
     @Transactional
     public NotificationResponse submitByOwner(
@@ -122,6 +131,8 @@ public class NotificationService {
         n.setStatus(NotificationStatus.APPROVED);
         n.setApprovedBy(adminId);
         n.setApprovedAt(OffsetDateTime.now());
+        // Now that it's approved, fan it out to physical devices.
+        deliverPush(n);
         return NotificationResponse.of(n, false);
     }
 
@@ -173,6 +184,35 @@ public class NotificationService {
     }
 
     // ── helpers ─────────────────────────────────────────────────────
+
+    /**
+     * Fans an approved notification out to physical devices via FCM.
+     * Best-effort — a push failure never rolls back the in-app write.
+     * <ul>
+     *   <li>{@code BROADCAST} → every registered device.</li>
+     *   <li>{@code USER} → that user's devices.</li>
+     *   <li>{@code COMPANY_CARDHOLDERS} → in-app only for now; a
+     *       per-cardholder fan-out can be added once PushService gains
+     *       a bulk-by-user method.</li>
+     * </ul>
+     */
+    private void deliverPush(Notification n) {
+        try {
+            switch (n.getTargetType()) {
+                case BROADCAST -> push.pushToAll(n.getTitle(), n.getBody());
+                case USER -> {
+                    if (n.getUserId() != null) {
+                        push.pushToUser(n.getUserId(), n.getTitle(), n.getBody());
+                    }
+                }
+                case COMPANY_CARDHOLDERS -> {
+                    // Delivered in-app; physical push TBD.
+                }
+            }
+        } catch (RuntimeException ignored) {
+            // Push is best-effort; the inbox row is already committed.
+        }
+    }
 
     /**
      * Validates the target + (when ownerScope is set) checks the owner

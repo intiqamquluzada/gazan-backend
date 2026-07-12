@@ -37,6 +37,9 @@ dependencies {
     // ── Observability ──────────────────────────────────────────
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
 
+    // ── Email (password-reset codes; SMTP optional at runtime) ─
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
+
     // ── API docs (Swagger UI) ──────────────────────────────────
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0'
 

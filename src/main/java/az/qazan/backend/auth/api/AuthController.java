@@ -1,10 +1,13 @@
 package az.qazan.backend.auth.api;
 
 import az.qazan.backend.auth.api.dto.AuthResponse;
+import az.qazan.backend.auth.api.dto.ForgotPasswordRequest;
 import az.qazan.backend.auth.api.dto.LoginRequest;
 import az.qazan.backend.auth.api.dto.RefreshRequest;
 import az.qazan.backend.auth.api.dto.RegisterRequest;
+import az.qazan.backend.auth.api.dto.ResetPasswordRequest;
 import az.qazan.backend.auth.application.AuthService;
+import az.qazan.backend.auth.application.PasswordResetService;
 import az.qazan.backend.common.api.ApiResponse;
 import az.qazan.backend.common.security.AppUserPrincipal;
 import az.qazan.backend.common.security.CurrentUser;
@@ -31,6 +34,7 @@ public class AuthController {
 
     private final AuthService auth;
     private final UserService users;
+    private final PasswordResetService passwordReset;
 
     @Operation(summary = "Create a new account and return a token pair")
     @PostMapping("/register")
@@ -52,6 +56,23 @@ public class AuthController {
     public AuthResponse refresh(@Valid @RequestBody RefreshRequest body,
                                 HttpServletRequest http) {
         return auth.refresh(body.refreshToken(), http);
+    }
+
+    @Operation(summary = "Request a password-reset code by email")
+    @PostMapping("/forgot-password")
+    public ResponseEntity<ApiResponse<Void>> forgotPassword(
+            @Valid @RequestBody ForgotPasswordRequest body) {
+        passwordReset.request(body.email());
+        // Always 200 — never reveal whether the email is registered.
+        return ResponseEntity.ok(ApiResponse.message("OK"));
+    }
+
+    @Operation(summary = "Set a new password using the emailed code")
+    @PostMapping("/reset-password")
+    public ResponseEntity<ApiResponse<Void>> resetPassword(
+            @Valid @RequestBody ResetPasswordRequest body) {
+        passwordReset.confirm(body.email(), body.code(), body.newPassword());
+        return ResponseEntity.ok(ApiResponse.message("OK"));
     }
 
     @Operation(summary = "Revoke the supplied refresh token")
