@@ -88,6 +88,18 @@ public class UserService {
         u.setActive(false);
     }
 
+    /**
+     * Admin reset — overwrites the password hash without requiring
+     * the current one. Used by the admin's "reset password" action so
+     * a business owner can sign in with the new value while their
+     * previous one is invalidated immediately.
+     */
+    @Transactional
+    public void resetPassword(UUID userId, String newRawPassword) {
+        User u = getById(userId);
+        u.setPasswordHash(passwordEncoder.encode(newRawPassword));
+    }
+
     @Transactional
     public void recordLogin(User u) {
         u.touchLastLogin();

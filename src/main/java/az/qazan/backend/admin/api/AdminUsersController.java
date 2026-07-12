@@ -1,7 +1,9 @@
 package az.qazan.backend.admin.api;
 
 import az.qazan.backend.admin.api.dto.AdminUserResponse;
+import az.qazan.backend.admin.api.dto.CreateUserRequest;
 import az.qazan.backend.admin.api.dto.PageResponse;
+import az.qazan.backend.admin.api.dto.ResetPasswordRequest;
 import az.qazan.backend.admin.api.dto.UpdateUserRoleRequest;
 import az.qazan.backend.admin.api.dto.UpdateUserStatusRequest;
 import az.qazan.backend.admin.application.AdminUserService;
@@ -13,13 +15,16 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.UUID;
@@ -63,5 +68,27 @@ public class AdminUsersController {
             @Valid @RequestBody UpdateUserStatusRequest body
     ) {
         return users.changeStatus(me.getId(), id, body.active());
+    }
+
+    @Operation(summary =
+            "Create a new account (defaults to BUSINESS_OWNER) — admin only")
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public AdminUserResponse create(@Valid @RequestBody CreateUserRequest body) {
+        return users.create(
+                body.email(),
+                body.password(),
+                body.fullName(),
+                body.phone(),
+                body.role());
+    }
+
+    @Operation(summary = "Reset a user's password (admin only)")
+    @PostMapping("/{id}/reset-password")
+    public AdminUserResponse resetPassword(
+            @PathVariable UUID id,
+            @Valid @RequestBody ResetPasswordRequest body
+    ) {
+        return users.resetPassword(id, body.newPassword());
     }
 }

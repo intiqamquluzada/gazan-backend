@@ -13,4 +13,11 @@ public interface LoyaltyCardRepository extends JpaRepository<LoyaltyCard, UUID> 
     Optional<LoyaltyCard> findByUserIdAndProgramId(UUID userId, UUID programId);
 
     int countByCompanyId(UUID companyId);
+
+    /**
+     * Every card a customer holds at one company. Used by the business
+     * dashboard's customer-detail view (one row per loyalty program).
+     */
+    List<LoyaltyCard> findAllByUserIdAndCompanyIdOrderByLastActivityAtDesc(
+            UUID userId, UUID companyId);
 }

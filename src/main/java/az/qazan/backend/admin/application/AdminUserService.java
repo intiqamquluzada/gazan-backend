@@ -6,6 +6,8 @@ import az.qazan.backend.admin.domain.AdminUserRepository;
 import az.qazan.backend.common.exception.BadRequestException;
 import az.qazan.backend.common.exception.ErrorCode;
 import az.qazan.backend.common.exception.NotFoundException;
+import az.qazan.backend.user.application.UserService;
+import az.qazan.backend.user.domain.AppLocale;
 import az.qazan.backend.user.domain.Role;
 import az.qazan.backend.user.domain.User;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +23,7 @@ import java.util.UUID;
 public class AdminUserService {
 
     private final AdminUserRepository users;
+    private final UserService userService;
 
     @Transactional(readOnly = true)
     public PageResponse<AdminUserResponse> list(String q, Role role, int page, int size) {
@@ -50,5 +53,37 @@ public class AdminUserService {
                 .orElseThrow(() -> NotFoundException.of(ErrorCode.USER_NOT_FOUND));
         u.setActive(active);
         return AdminUserResponse.from(users.save(u));
+    }
+
+    /**
+     * Admin creates a new account directly — handy for onboarding a
+     * business owner who can't go through the normal sign-up flow.
+     * Uses {@link UserService#register} so duplicate-email checks and
+     * password hashing happen the usual way.
+     */
+    @Transactional
+    public AdminUserResponse create(
+            String email, String password, String fullName, String phone, Role role) {
+        User created = userService.register(
+                email,
+                password,
+                fullName,
+                phone,
+                role == null ? Role.BUSINESS_OWNER : role,
+                AppLocale.AZ);
+        return AdminUserResponse.from(created);
+    }
+
+    /**
+     * Admin overwrites someone's password — used when a business
+     * owner forgets their credentials and contacts support. The user
+     * can sign in with the new value immediately.
+     */
+    @Transactional
+    public AdminUserResponse resetPassword(UUID userId, String newPassword) {
+        userService.resetPassword(userId, newPassword);
+        User u = users.findById(userId)
+                .orElseThrow(() -> NotFoundException.of(ErrorCode.USER_NOT_FOUND));
+        return AdminUserResponse.from(u);
     }
 }

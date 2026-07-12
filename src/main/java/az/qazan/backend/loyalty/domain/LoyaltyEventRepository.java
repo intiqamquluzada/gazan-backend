@@ -23,4 +23,16 @@ public interface LoyaltyEventRepository extends JpaRepository<LoyaltyEvent, UUID
             @Param("type") LoyaltyEvent.Type type,
             @Param("since") Instant since
     );
+
+    /** Recent activity for one customer at one company (newest first). */
+    @Query("""
+           select e from LoyaltyEvent e
+            where e.card.user.id = :userId
+              and e.card.company.id = :companyId
+            order by e.createdAt desc
+           """)
+    List<LoyaltyEvent> findRecentForUserAtCompany(
+            @Param("userId") UUID userId,
+            @Param("companyId") UUID companyId,
+            org.springframework.data.domain.Pageable page);
 }
