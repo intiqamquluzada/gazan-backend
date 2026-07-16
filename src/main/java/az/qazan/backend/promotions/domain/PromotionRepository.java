@@ -8,4 +8,7 @@ import java.util.UUID;
 public interface PromotionRepository extends JpaRepository<Promotion, UUID> {
 
     List<Promotion> findAllByActiveTrueOrderBySortOrderAsc();
+
+    /** Admin panel — every promotion, active or not, ordered for display. */
+    List<Promotion> findAllByOrderBySortOrderAsc();
 }
