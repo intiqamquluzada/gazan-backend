@@ -1,6 +1,7 @@
 package az.qazan.backend.companies.api.dto;
 
 import az.qazan.backend.companies.domain.BusinessCategory;
+import az.qazan.backend.companies.domain.CompanyStatus;
 
 import java.util.UUID;
 
@@ -25,6 +26,8 @@ public record CompanyResponse(
         String menuUrl,
         Double coinRate,
         String logoUrl,
+        String currency,
+        String country,
 
         // Raw per-language translations. `name` / `tagline` above are
         // already localized for the caller's Accept-Language; these
@@ -35,6 +38,8 @@ public record CompanyResponse(
         String nameTr,
         String taglineEn,
         String taglineRu,
-        String taglineTr
+        String taglineTr,
+
+        CompanyStatus status
 ) {
 }

@@ -1,5 +1,6 @@
 package az.qazan.backend.admin.api;
 
+import az.qazan.backend.admin.api.dto.AdminUserDetailResponse;
 import az.qazan.backend.admin.api.dto.AdminUserResponse;
 import az.qazan.backend.admin.api.dto.CreateUserRequest;
 import az.qazan.backend.admin.api.dto.PageResponse;
@@ -50,6 +51,12 @@ public class AdminUsersController {
         return users.list(q, role, page, size);
     }
 
+    @Operation(summary = "One user with cards, balance and recent coins (admin only)")
+    @GetMapping("/{id}")
+    public AdminUserDetailResponse detail(@PathVariable UUID id) {
+        return users.detail(id);
+    }
+
     @Operation(summary = "Change a user's role (admin only)")
     @PatchMapping("/{id}/role")
     public AdminUserResponse changeRole(
@@ -74,8 +81,11 @@ public class AdminUsersController {
             "Create a new account (defaults to BUSINESS_OWNER) — admin only")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public AdminUserResponse create(@Valid @RequestBody CreateUserRequest body) {
+    public AdminUserResponse create(
+            @CurrentUser AppUserPrincipal me,
+            @Valid @RequestBody CreateUserRequest body) {
         return users.create(
+                me.getId(),
                 body.email(),
                 body.password(),
                 body.fullName(),
@@ -86,9 +96,10 @@ public class AdminUsersController {
     @Operation(summary = "Reset a user's password (admin only)")
     @PostMapping("/{id}/reset-password")
     public AdminUserResponse resetPassword(
+            @CurrentUser AppUserPrincipal me,
             @PathVariable UUID id,
             @Valid @RequestBody ResetPasswordRequest body
     ) {
-        return users.resetPassword(id, body.newPassword());
+        return users.resetPassword(me.getId(), id, body.newPassword());
     }
 }

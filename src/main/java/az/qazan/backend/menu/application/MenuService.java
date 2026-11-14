@@ -1,5 +1,6 @@
 package az.qazan.backend.menu.application;
 
+import az.qazan.backend.common.exception.AppException;
 import az.qazan.backend.common.exception.ErrorCode;
 import az.qazan.backend.common.exception.NotFoundException;
 import az.qazan.backend.companies.domain.Company;
@@ -56,6 +57,28 @@ public class MenuService {
     @Transactional
     public void delete(UUID id) {
         items.deleteById(id);
+    }
+
+    /** Update, but only if the item belongs to [companyId] (owner scope). */
+    @Transactional
+    public MenuItem updateOwned(UUID id, UUID companyId, MenuItemRequest req) {
+        assertOwned(id, companyId);
+        return update(id, req);
+    }
+
+    /** Delete, but only if the item belongs to [companyId] (owner scope). */
+    @Transactional
+    public void deleteOwned(UUID id, UUID companyId) {
+        assertOwned(id, companyId);
+        items.deleteById(id);
+    }
+
+    private void assertOwned(UUID id, UUID companyId) {
+        MenuItem m = items.findById(id)
+                .orElseThrow(() -> new NotFoundException(ErrorCode.NOT_FOUND));
+        if (!m.getCompany().getId().equals(companyId)) {
+            throw new AppException(ErrorCode.FORBIDDEN);
+        }
     }
 
     private static String blankToNull(String s) {

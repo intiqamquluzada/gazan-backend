@@ -17,6 +17,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.ZoneId;
+
 @Entity
 @Table(
         name = "companies",
@@ -97,6 +99,26 @@ public class Company extends BaseEntity {
     @Column(name = "instagram", length = 64)
     private String instagram;
 
+    /** ISO currency of this venue's prices: AZN (₼) or TRY (₺). */
+    @Column(name = "currency", nullable = false, length = 3)
+    @Builder.Default
+    private String currency = "AZN";
+
+    /** ISO country code — drives the default currency and phone prefix. */
+    @Column(name = "country", nullable = false, length = 2)
+    @Builder.Default
+    private String country = "AZ";
+
+    /** QR | NFC | BOTH — which way customers collect at this venue. */
+    @Column(name = "loyalty_mode", nullable = false, length = 8)
+    @Builder.Default
+    private String loyaltyMode = "BOTH";
+
+    /** Max metres between the customer and the venue for an NFC tap (0 = off). */
+    @Column(name = "nfc_geofence_m", nullable = false)
+    @Builder.Default
+    private int nfcGeofenceM = 300;
+
     @Column(name = "working_hours", length = 120)
     private String workingHours;
 
@@ -124,4 +146,16 @@ public class Company extends BaseEntity {
     /** Uploaded logo / profile picture URL. Null → brand monogram fallback. */
     @Column(name = "logo_url", length = 512)
     private String logoUrl;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 16)
+    @Builder.Default
+    private CompanyStatus status = CompanyStatus.PENDING;
+
+    /** Calendar days at this venue (daily caps, "today" figures) follow this zone. */
+    public ZoneId venueZone() {
+        return "TR".equalsIgnoreCase(country)
+                ? ZoneId.of("Europe/Istanbul")
+                : ZoneId.of("Asia/Baku");
+    }
 }

@@ -10,6 +10,8 @@ public record BusinessCustomerResponse(
         long totalStamps,
         long rewardsClaimed,
         long cardCount,
-        Instant lastActivityAt
+        Instant lastActivityAt,
+        /** Coins this customer holds at the venue. */
+        long coinBalance
 ) {
 }

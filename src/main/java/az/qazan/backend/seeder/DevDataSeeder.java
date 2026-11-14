@@ -3,6 +3,7 @@ package az.qazan.backend.seeder;
 import az.qazan.backend.companies.domain.BusinessCategory;
 import az.qazan.backend.companies.domain.Company;
 import az.qazan.backend.companies.domain.CompanyRepository;
+import az.qazan.backend.companies.domain.CompanyStatus;
 import az.qazan.backend.loyalty.domain.LoyaltyProgram;
 import az.qazan.backend.loyalty.domain.LoyaltyProgramRepository;
 import az.qazan.backend.loyalty.domain.LoyaltyRewardType;
@@ -62,7 +63,7 @@ public class DevDataSeeder {
                             .email("demo@qazan.az")
                             .passwordHash(passwordEncoder.encode("password123"))
                             .fullName("Aysel Məmmədova")
-                            .phone("+994 55 123 45 67")
+                            .phone("+994551234567")
                             .role(Role.CUSTOMER)
                             .locale(AppLocale.AZ)
                             .active(true)
@@ -201,6 +202,7 @@ public class DevDataSeeder {
                 .reviewCount(reviews)
                 .featured(featured)
                 .owner(owner)
+                .status(CompanyStatus.APPROVED)
                 .build());
         return Map.entry(name, c);
     }

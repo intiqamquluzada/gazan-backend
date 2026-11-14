@@ -13,6 +13,7 @@ public record PromotionResponse(
         long gradientStartHex,
         long gradientEndHex,
         String cta,
-        Instant endsAt
+        Instant endsAt,
+        String imageUrl
 ) {
 }

@@ -54,6 +54,13 @@ public class NotificationController {
         return Map.of("count", 0L);
     }
 
+    @Operation(summary = "What I have submitted, with approval status")
+    @PreAuthorize("hasRole('BUSINESS_OWNER') or hasRole('ADMIN')")
+    @GetMapping("/submitted")
+    public List<NotificationResponse> submitted(@CurrentUser AppUserPrincipal me) {
+        return notifications.submittedBy(me.getId());
+    }
+
     /**
      * Business owner submits a notification for the customers holding
      * a loyalty card at their company. The request is saved as

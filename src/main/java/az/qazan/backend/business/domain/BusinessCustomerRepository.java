@@ -32,4 +32,36 @@ public interface BusinessCustomerRepository
         """)
     List<BusinessCustomerProjection> customersOfCompany(
             @Param("companyId") UUID companyId);
+
+    /** Everyone with coin activity at the venue, with their balance there. */
+    @Query("""
+        select u.id                       as userId,
+               u.fullName                 as fullName,
+               u.phone                    as phone,
+               coalesce(sum(t.amount), 0) as balance,
+               min(t.createdAt)           as firstActivityAt,
+               max(t.createdAt)           as lastActivityAt
+          from CoinTransaction t
+          join t.user u
+         where t.company.id = :companyId
+         group by u.id, u.fullName, u.phone
+        """)
+    List<CoinCustomerProjection> coinCustomersOfCompany(
+            @Param("companyId") UUID companyId);
+
+    /** One customer's coin activity at the venue (empty when none). */
+    @Query("""
+        select u.id                       as userId,
+               u.fullName                 as fullName,
+               u.phone                    as phone,
+               coalesce(sum(t.amount), 0) as balance,
+               min(t.createdAt)           as firstActivityAt,
+               max(t.createdAt)           as lastActivityAt
+          from CoinTransaction t
+          join t.user u
+         where t.company.id = :companyId and u.id = :userId
+         group by u.id, u.fullName, u.phone
+        """)
+    java.util.Optional<CoinCustomerProjection> coinCustomerAt(
+            @Param("companyId") UUID companyId, @Param("userId") UUID userId);
 }

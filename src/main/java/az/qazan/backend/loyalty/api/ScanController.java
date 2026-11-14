@@ -27,8 +27,8 @@ public class ScanController {
     private final LoyaltyCardService cards;
     private final LoyaltyMapper mapper;
 
-    @Operation(summary = "Business scans customer QR — adds stamp(s) to that customer's card")
-    @PreAuthorize("hasRole('BUSINESS_OWNER') or hasRole('ADMIN')")
+    @Operation(summary = "Staff add stamp(s) to a customer's card by hand")
+    @PreAuthorize("hasRole('BUSINESS_OWNER') or hasRole('CASHIER')")
     @PostMapping
     public LoyaltyCardResponse scan(
             @CurrentUser AppUserPrincipal me,

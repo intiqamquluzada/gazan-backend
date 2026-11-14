@@ -6,6 +6,8 @@ import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
@@ -18,6 +20,8 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.Instant;
 import java.util.List;
@@ -81,6 +85,40 @@ public class GlobalExceptionHandler {
                 messages.get(ErrorCode.BAD_REQUEST), req, null, null);
     }
 
+    // ─────────────────── persistence / runtime ─────────────────
+
+    @ExceptionHandler({
+            OptimisticLockingFailureException.class,
+            DataIntegrityViolationException.class,
+    })
+    public ResponseEntity<ApiError> handleConflict(Exception ex, HttpServletRequest req) {
+        log.debug("Conflict at {}", req.getRequestURI(), ex);
+        return build(ErrorCode.CONFLICT,
+                messages.get(ErrorCode.CONFLICT), req, null, null);
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ApiError> handleIllegalState(
+            IllegalStateException ex, HttpServletRequest req) {
+        log.debug("Illegal state at {}", req.getRequestURI(), ex);
+        return build(ErrorCode.BAD_REQUEST,
+                messages.get(ErrorCode.BAD_REQUEST), req, null, null);
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ApiError> handleNoResource(
+            NoResourceFoundException ex, HttpServletRequest req) {
+        return build(ErrorCode.NOT_FOUND,
+                messages.get(ErrorCode.NOT_FOUND), req, null, null);
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ApiError> handleTooLarge(
+            MaxUploadSizeExceededException ex, HttpServletRequest req) {
+        return build(ErrorCode.PAYLOAD_TOO_LARGE,
+                messages.get(ErrorCode.PAYLOAD_TOO_LARGE), req, null, null);
+    }
+
     // ──────────────────────── security ────────────────────────
 
     @ExceptionHandler(BadCredentialsException.class)
@@ -137,7 +175,7 @@ public class GlobalExceptionHandler {
         return new ApiError.FieldError(
                 fe.getField(),
                 fe.getDefaultMessage(),
-                fe.getRejectedValue()
+                safeValue(fe.getField(), fe.getRejectedValue())
         );
     }
 
@@ -145,7 +183,14 @@ public class GlobalExceptionHandler {
         return new ApiError.FieldError(
                 cv.getPropertyPath().toString(),
                 cv.getMessage(),
-                cv.getInvalidValue()
+                safeValue(cv.getPropertyPath().toString(), cv.getInvalidValue())
         );
+    }
+
+    /** Secrets typed by the user are never echoed back in an error body. */
+    private static Object safeValue(String field, Object value) {
+        String f = field == null ? "" : field.toLowerCase();
+        boolean secret = f.contains("password") || f.contains("token") || f.contains("code");
+        return secret ? null : value;
     }
 }

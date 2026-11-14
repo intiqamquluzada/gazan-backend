@@ -5,6 +5,7 @@ import az.qazan.backend.common.exception.ConflictException;
 import az.qazan.backend.common.exception.ErrorCode;
 import az.qazan.backend.common.exception.NotFoundException;
 import az.qazan.backend.common.exception.UnauthorizedException;
+import az.qazan.backend.push.domain.DeviceTokenRepository;
 import az.qazan.backend.user.api.dto.ChangePasswordRequest;
 import az.qazan.backend.user.api.dto.UpdateProfileRequest;
 import az.qazan.backend.user.domain.AppLocale;
@@ -18,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -30,7 +32,27 @@ public class UserService {
 
     private final UserRepository repository;
     private final RefreshTokenRepository refreshRepository;
+    private final DeviceTokenRepository deviceTokens;
     private final PasswordEncoder passwordEncoder;
+
+    /** Finds an account by email or phone, whichever was typed. */
+    @Transactional(readOnly = true)
+    public Optional<User> findByIdentifier(String identifier) {
+        String value = identifier.trim();
+        if (value.contains("@")) {
+            return repository.findByEmailIgnoreCase(value);
+        }
+        String phone = PhoneNumbers.normalize(value);
+        return phone == null
+                ? Optional.empty()
+                : repository.findFirstByPhoneOrderByCreatedAtAsc(phone);
+    }
+
+    @Transactional(readOnly = true)
+    public boolean phoneRegistered(String rawPhone) {
+        String phone = PhoneNumbers.normalize(rawPhone);
+        return phone != null && repository.existsByPhone(phone);
+    }
 
     @Transactional(readOnly = true)
     public User getById(UUID id) {
@@ -55,11 +77,15 @@ public class UserService {
         if (repository.existsByEmailIgnoreCase(email)) {
             throw new ConflictException(ErrorCode.AUTH_EMAIL_TAKEN);
         }
+        String normalizedPhone = PhoneNumbers.normalize(phone);
+        if (normalizedPhone != null && repository.existsByPhone(normalizedPhone)) {
+            throw new ConflictException(ErrorCode.AUTH_PHONE_TAKEN);
+        }
         User u = User.builder()
                 .email(email.trim().toLowerCase())
                 .passwordHash(passwordEncoder.encode(rawPassword))
                 .fullName(fullName.trim())
-                .phone(phone)
+                .phone(normalizedPhone)
                 .birthDate(birthDate)
                 .role(role == null ? Role.CUSTOMER : role)
                 .locale(locale == null ? AppLocale.AZ : locale)
@@ -72,7 +98,8 @@ public class UserService {
     public User updateProfile(UUID userId, UpdateProfileRequest req) {
         User u = getById(userId);
         if (req.fullName() != null) u.setFullName(req.fullName().trim());
-        if (req.phone() != null) u.setPhone(req.phone().trim());
+        if (req.phone() != null) applyPhone(u, req.phone());
+        if (req.birthDate() != null) u.setBirthDate(req.birthDate());
         if (req.avatarUrl() != null) u.setAvatarUrl(req.avatarUrl().trim());
         if (req.businessName() != null) u.setBusinessName(req.businessName().trim());
         if (req.locale() != null) u.setLocale(req.locale());
@@ -86,6 +113,19 @@ public class UserService {
             throw new UnauthorizedException(ErrorCode.USER_PASSWORD_MISMATCH);
         }
         u.setPasswordHash(passwordEncoder.encode(req.newPassword()));
+        refreshRepository.revokeAllForUser(u, Instant.now());
+    }
+
+    private void applyPhone(User u, String rawPhone) {
+        String phone = PhoneNumbers.normalize(rawPhone);
+        if (phone == null || phone.equals(u.getPhone())) {
+            return;
+        }
+        if (repository.existsByPhoneAndIdNot(phone, u.getId())) {
+            throw new ConflictException(ErrorCode.AUTH_PHONE_TAKEN);
+        }
+        u.setPhone(phone);
+        u.setPhoneVerifiedAt(null);
     }
 
     /**
@@ -100,12 +140,18 @@ public class UserService {
     public void deactivate(UUID userId) {
         User u = getById(userId);
         refreshRepository.revokeAllForUser(u, Instant.now());
+        deviceTokens.deleteByUserId(u.getId());
         u.setEmail("deleted+" + u.getId() + "@qazan.az");
         u.setFullName("Silinmiş istifadəçi");
         u.setPhone(null);
         u.setAvatarUrl(null);
         u.setBusinessName(null);
         u.setBirthDate(null);
+        u.setGoogleSub(null);
+        u.setAppleSub(null);
+        u.setPhoneVerifiedAt(null);
+        u.setStaffCompanyId(null);
+        u.setPasswordHash(passwordEncoder.encode(UUID.randomUUID().toString()));
         u.setActive(false);
     }
 
@@ -119,6 +165,7 @@ public class UserService {
     public void resetPassword(UUID userId, String newRawPassword) {
         User u = getById(userId);
         u.setPasswordHash(passwordEncoder.encode(newRawPassword));
+        refreshRepository.revokeAllForUser(u, Instant.now());
     }
 
     @Transactional

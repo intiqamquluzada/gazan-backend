@@ -2,7 +2,8 @@ spring:
   application:
     name: qazan-backend
   profiles:
-    active: ${SPRING_PROFILES_ACTIVE:dev}
+    # Seeders with known passwords run only under "dev", which must be asked for.
+    active: ${SPRING_PROFILES_ACTIVE:prod}
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/qazan}
     username: ${DB_USER:qazan}
@@ -55,8 +56,35 @@ app:
   default-locale: az
   supported-locales: az,en,ru,tr
 
+qazan:
+  legal:
+    # Shown on /legal/privacy, /legal/terms, /legal/delete-account. Until set,
+    # the pages show a visible "to be completed" marker instead of a value.
+    entity: ${QAZAN_LEGAL_ENTITY:}
+    email: ${QAZAN_LEGAL_EMAIL:}
+    address: ${QAZAN_LEGAL_ADDRESS:}
+    effective-date: ${QAZAN_LEGAL_DATE:}
+  social:
+    google-client-ids: ${GOOGLE_CLIENT_IDS:}
+    apple-client-ids: ${APPLE_CLIENT_IDS:}
+  coins:
+    max-grant: ${QAZAN_COINS_MAX_GRANT:10000}
+  rate-limit:
+    per-minute: ${QAZAN_RATE_LIMIT_PER_MINUTE:20}
+  push:
+    fcm:
+      # Phone notifications. Needs a Firebase service-account JSON, given
+      # as a file path (preferred) or inline; see gazan-mobile/PUSH_SETUP.md.
+      enabled: ${FCM_ENABLED:false}
+      credentials-file: ${FCM_CREDENTIALS_FILE:}
+      credentials-json: ${FCM_CREDENTIALS_JSON:}
+
 # ── Actuator ──────────────────────────────────────────────────
 management:
+  health:
+    # An unreachable mail server must not mark the whole app as down.
+    mail:
+      enabled: false
   endpoints:
     web:
       exposure:

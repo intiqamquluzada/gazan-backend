@@ -12,6 +12,21 @@ public interface RewardClaimRepository extends JpaRepository<RewardClaim, UUID> 
 
     List<RewardClaim> findAllByUserIdOrderByCreatedAtDesc(UUID userId);
 
+    boolean existsByCompanyIdAndStatus(UUID companyId, RewardClaimStatus status);
+
+    boolean existsByUserIdAndCompanyIdAndStatus(
+            UUID userId, UUID companyId, RewardClaimStatus status);
+
+    List<RewardClaim> findAllByCompanyIdAndStatusAndUsedAtGreaterThanEqual(
+            UUID companyId, RewardClaimStatus status, java.time.Instant since);
+
+    List<RewardClaim> findAllByUserIdAndCompanyIdAndStatusAndUsedAtGreaterThanEqual(
+            UUID userId, UUID companyId, RewardClaimStatus status, java.time.Instant since);
+
+    /** Everything still unused at one venue — the cashier's hand-out list. */
+    List<RewardClaim> findAllByCompanyIdAndStatusOrderByCreatedAtDesc(
+            UUID companyId, RewardClaimStatus status);
+
     List<RewardClaim> findAllByUserIdAndCompanyIdAndStatusOrderByCreatedAtDesc(
             UUID userId, UUID companyId, RewardClaimStatus status);
 }

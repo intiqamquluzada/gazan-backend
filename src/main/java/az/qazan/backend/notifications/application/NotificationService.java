@@ -12,7 +12,9 @@ import az.qazan.backend.notifications.domain.NotificationReadRepository;
 import az.qazan.backend.notifications.domain.NotificationRepository;
 import az.qazan.backend.notifications.domain.NotificationStatus;
 import az.qazan.backend.notifications.domain.NotificationTarget;
+import az.qazan.backend.common.i18n.MessageService;
 import az.qazan.backend.push.application.PushService;
+import az.qazan.backend.user.domain.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -31,6 +33,8 @@ public class NotificationService {
     private final NotificationReadRepository reads;
     private final CompanyRepository companies;
     private final PushService push;
+    private final UserRepository users;
+    private final MessageService messages;
 
     // ── Admin authoring ─────────────────────────────────────────────
 
@@ -79,6 +83,38 @@ public class NotificationService {
         Notification saved = notifications.save(n);
         // Also deliver to the user's registered devices.
         push.pushToUser(userId, saved.getTitle(), saved.getBody());
+        return saved;
+    }
+
+    /** The language a user reads notifications in (their profile locale). */
+    @Transactional(readOnly = true)
+    public java.util.Locale localeOf(UUID userId) {
+        return users.findById(userId)
+                .map(u -> u.getLocale() == null ? null : u.getLocale().toJavaLocale())
+                .orElse(java.util.Locale.of("az"));
+    }
+
+    /**
+     * System notification written in the recipient's own language.
+     * {@code key} names a pair of messages: {@code <key>.title} and
+     * {@code <key>.body} (the body takes {@code args}). {@code data} rides
+     * along with the push, e.g. {@code route} to open when tapped.
+     */
+    @Transactional
+    public Notification notifyUserLocalized(UUID userId, String key,
+                                            java.util.Map<String, String> data,
+                                            Object... args) {
+        java.util.Locale locale = localeOf(userId);
+        Notification saved = notifications.save(Notification.builder()
+                .userId(userId)
+                .title(messages.get(key + ".title", locale).trim())
+                .body(messages.get(key + ".body", locale, args).trim())
+                .targetType(NotificationTarget.USER)
+                .status(NotificationStatus.APPROVED)
+                .approvedAt(OffsetDateTime.now())
+                .build());
+        push.pushToUsers(java.util.List.of(userId), saved.getTitle(), saved.getBody(),
+                data == null ? PushService.OPEN_INBOX : data);
         return saved;
     }
 
@@ -159,6 +195,14 @@ public class NotificationService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public List<NotificationResponse> submittedBy(UUID ownerId) {
+        return notifications.findAllBySubmittedByOrderByCreatedAtDesc(
+                        ownerId, PageRequest.of(0, 50)).stream()
+                .map(n -> NotificationResponse.of(n, false))
+                .toList();
+    }
+
     /** A user's inbox — broadcasts, direct, and cardholder targets. */
     @Transactional(readOnly = true)
     public List<NotificationResponse> inbox(UUID userId) {
@@ -191,9 +235,7 @@ public class NotificationService {
      * <ul>
      *   <li>{@code BROADCAST} → every registered device.</li>
      *   <li>{@code USER} → that user's devices.</li>
-     *   <li>{@code COMPANY_CARDHOLDERS} → in-app only for now; a
-     *       per-cardholder fan-out can be added once PushService gains
-     *       a bulk-by-user method.</li>
+     *   <li>{@code COMPANY_CARDHOLDERS} → devices of that venue's cardholders.</li>
      * </ul>
      */
     private void deliverPush(Notification n) {
@@ -206,7 +248,10 @@ public class NotificationService {
                     }
                 }
                 case COMPANY_CARDHOLDERS -> {
-                    // Delivered in-app; physical push TBD.
+                    if (n.getTargetCompanyId() != null) {
+                        push.pushToCardholders(n.getTargetCompanyId(),
+                                n.getTitle(), n.getBody());
+                    }
                 }
             }
         } catch (RuntimeException ignored) {

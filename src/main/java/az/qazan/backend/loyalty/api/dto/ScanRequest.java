@@ -1,7 +1,9 @@
 package az.qazan.backend.loyalty.api.dto;
 
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 import java.util.UUID;
 
@@ -14,8 +16,8 @@ import java.util.UUID;
 public record ScanRequest(
         @NotNull UUID customerId,
         @NotNull UUID programId,
-        @Min(1) int stamps,
-        String note
+        @Min(1) @Max(10) int stamps,
+        @Size(max = 240) String note
 ) {
     public ScanRequest {
         if (stamps == 0) stamps = 1;

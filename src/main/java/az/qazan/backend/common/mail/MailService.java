@@ -3,6 +3,8 @@ package az.qazan.backend.common.mail;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
@@ -20,11 +22,18 @@ public class MailService {
 
     private final ObjectProvider<JavaMailSender> mailSender;
 
+    private final Environment environment;
+
     @Value("${qazan.mail.from:no-reply@qazan.az}")
     private String from;
 
-    public MailService(ObjectProvider<JavaMailSender> mailSender) {
+    @Value("${spring.mail.host:}")
+    private String host;
+
+    public MailService(ObjectProvider<JavaMailSender> mailSender,
+                       Environment environment) {
         this.mailSender = mailSender;
+        this.environment = environment;
     }
 
     public void sendPasswordResetCode(String email, String code) {
@@ -36,9 +45,16 @@ public class MailService {
 
     private void send(String to, String subject, String body) {
         JavaMailSender sender = mailSender.getIfAvailable();
-        if (sender == null) {
-            log.warn("[mail] SMTP not configured — '{}' to {}:\n{}",
-                    subject, to, body);
+        if (sender == null || host == null || host.isBlank()) {
+            // The body can hold a live reset code, so it stays out of the
+            // logs everywhere except a developer's own machine.
+            if (environment.acceptsProfiles(Profiles.of("dev"))) {
+                log.warn("[mail] SMTP not configured — '{}' to {}:\n{}",
+                        subject, to, body);
+            } else {
+                log.warn("[mail] SMTP not configured — dropped '{}' to {}",
+                        subject, to);
+            }
             return;
         }
         try {

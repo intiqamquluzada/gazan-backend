@@ -46,12 +46,15 @@ public class CompanyMapper {
                 c.getMenuUrl(),
                 c.getCoinRate(),
                 c.getLogoUrl(),
+                c.getCurrency(),
+                c.getCountry(),
                 c.getNameEn(),
                 c.getNameRu(),
                 c.getNameTr(),
                 c.getTaglineEn(),
                 c.getTaglineRu(),
-                c.getTaglineTr()
+                c.getTaglineTr(),
+                c.getStatus()
         );
     }
 

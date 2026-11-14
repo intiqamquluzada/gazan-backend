@@ -10,6 +10,8 @@ public record CompanyReviewsResponse(
         double average,
         long count,
         ReviewResponse myReview,
-        List<ReviewResponse> reviews
+        List<ReviewResponse> reviews,
+        /** True when the caller may write/edit a review (verified visit, not the owner). */
+        boolean canReview
 ) {
 }

@@ -5,6 +5,8 @@ import az.qazan.backend.business.api.dto.BusinessCustomerDetailResponse.CardSumm
 import az.qazan.backend.business.api.dto.BusinessCustomerDetailResponse.CustomerEvent;
 import az.qazan.backend.common.exception.ErrorCode;
 import az.qazan.backend.common.exception.NotFoundException;
+import az.qazan.backend.business.domain.BusinessCustomerRepository;
+import az.qazan.backend.business.domain.CoinCustomerProjection;
 import az.qazan.backend.companies.application.CompanyService;
 import az.qazan.backend.companies.domain.Company;
 import az.qazan.backend.loyalty.domain.LoyaltyCard;
@@ -37,6 +39,7 @@ public class BusinessCustomerDetailService {
     private final UserRepository users;
     private final LoyaltyCardRepository cards;
     private final LoyaltyEventRepository events;
+    private final BusinessCustomerRepository customers;
 
     @Transactional(readOnly = true)
     public BusinessCustomerDetailResponse detail(UUID ownerId, UUID customerId) {
@@ -45,7 +48,10 @@ public class BusinessCustomerDetailService {
         List<LoyaltyCard> myCards = cards
                 .findAllByUserIdAndCompanyIdOrderByLastActivityAtDesc(
                         customerId, company.getId());
-        if (myCards.isEmpty()) {
+        // Coin-only customers have no card here but are still this venue's.
+        CoinCustomerProjection coin = customers
+                .coinCustomerAt(company.getId(), customerId).orElse(null);
+        if (myCards.isEmpty() && coin == null) {
             throw new NotFoundException(ErrorCode.NOT_FOUND);
         }
         User u = users.findById(customerId)
@@ -56,12 +62,18 @@ public class BusinessCustomerDetailService {
                 myCards.stream().mapToInt(LoyaltyCard::getTotalRewardsClaimed).sum();
         int available =
                 myCards.stream().mapToInt(LoyaltyCard::getRewardsAvailable).sum();
-        Instant lastActivity = myCards.stream()
-                .map(LoyaltyCard::getLastActivityAt)
+        Instant lastActivity = java.util.stream.Stream.concat(
+                        myCards.stream().map(LoyaltyCard::getLastActivityAt),
+                        java.util.stream.Stream.ofNullable(
+                                coin == null ? null : coin.getLastActivityAt()))
+                .filter(java.util.Objects::nonNull)
                 .max(Comparator.naturalOrder())
                 .orElse(null);
-        Instant memberSince = myCards.stream()
-                .map(LoyaltyCard::getCreatedAt)
+        Instant memberSince = java.util.stream.Stream.concat(
+                        myCards.stream().map(LoyaltyCard::getCreatedAt),
+                        java.util.stream.Stream.ofNullable(
+                                coin == null ? null : coin.getFirstActivityAt()))
+                .filter(java.util.Objects::nonNull)
                 .min(Comparator.naturalOrder())
                 .orElse(null);
 
@@ -107,7 +119,8 @@ public class BusinessCustomerDetailService {
                 visits,
                 myCards.size(),
                 cardSummaries,
-                activity
+                activity,
+                coin == null ? 0 : coin.getBalance()
         );
     }
 }

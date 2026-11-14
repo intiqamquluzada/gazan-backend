@@ -1,0 +1,9 @@
+server:
+  error:
+    include-binding-errors: never
+
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false

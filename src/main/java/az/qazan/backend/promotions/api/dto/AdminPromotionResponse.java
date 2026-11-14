@@ -18,7 +18,8 @@ public record AdminPromotionResponse(
         String cta,
         boolean active,
         Instant endsAt,
-        int sortOrder
+        int sortOrder,
+        String imageUrl
 ) {
     public static AdminPromotionResponse from(Promotion p) {
         return new AdminPromotionResponse(
@@ -33,7 +34,8 @@ public record AdminPromotionResponse(
                 p.getCta(),
                 p.isActive(),
                 p.getEndsAt(),
-                p.getSortOrder()
+                p.getSortOrder(),
+                p.getImageUrl()
         );
     }
 }

@@ -49,11 +49,14 @@ public class CoinController {
     }
 
     @Operation(summary = "Business owner credits coins to a customer (after a scan)")
-    @PreAuthorize("hasRole('BUSINESS_OWNER') or hasRole('ADMIN')")
+    @PreAuthorize("hasRole('BUSINESS_OWNER') or hasRole('CASHIER')")
     @PostMapping("/grant")
-    public CoinSummaryResponse grant(@Valid @RequestBody GrantCoinsRequest body) {
-        return coins.grant(
-                body.customerId(), body.companyId(), body.amount(), body.note());
+    public CoinSummaryResponse grant(
+            @CurrentUser AppUserPrincipal me,
+            @Valid @RequestBody GrantCoinsRequest body) {
+        return coins.grantByStaff(
+                me.getId(), body.customerId(), body.companyId(),
+                body.amount(), body.note());
     }
 
     @Operation(summary = "Cashier confirms a customer redeeming a coin reward")

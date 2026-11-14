@@ -5,7 +5,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
+import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -28,4 +31,17 @@ public interface AdminCoinRepository extends JpaRepository<CoinTransaction, UUID
     /** Total ever spent (sum of negative entries, returned as a positive number). */
     @Query("select coalesce(-sum(t.amount), 0) from CoinTransaction t where t.amount < 0")
     long totalSpent();
+
+    /** Coin flow per business in a window, biggest issuers first. */
+    @Query("""
+        select c.id as companyId, c.name as name,
+               coalesce(sum(case when t.amount > 0 then t.amount else 0 end), 0) as earned,
+               coalesce(sum(case when t.amount < 0 then -t.amount else 0 end), 0) as spent,
+               coalesce(sum(case when t.amount > 0 then 1 else 0 end), 0) as grants
+          from CoinTransaction t join t.company c
+         where t.createdAt >= :since
+         group by c.id, c.name
+         order by earned desc
+        """)
+    List<CompanyCoinTotals> totalsByCompany(@Param("since") Instant since);
 }

@@ -18,6 +18,7 @@ public interface CoinRewardRepository extends JpaRepository<CoinReward, UUID> {
         select r from CoinReward r
           join fetch r.company c
          where r.active = true
+           and c.status = az.qazan.backend.companies.domain.CompanyStatus.APPROVED
          order by c.name asc, r.coinCost asc
         """)
     List<CoinReward> findAllActiveWithCompany();

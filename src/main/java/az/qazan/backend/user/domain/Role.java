@@ -16,6 +16,9 @@ public enum Role {
     /** Owns or runs a business — sees the business-side dashboard. */
     BUSINESS_OWNER,
 
+    /** Works the till of one business; see {@code User.staffCompanyId}. */
+    CASHIER,
+
     /** Internal — full access to admin endpoints. */
     ADMIN;
 }
