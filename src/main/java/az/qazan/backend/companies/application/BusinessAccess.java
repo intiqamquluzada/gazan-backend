@@ -4,6 +4,7 @@ import az.qazan.backend.common.exception.AppException;
 import az.qazan.backend.common.exception.ErrorCode;
 import az.qazan.backend.common.exception.NotFoundException;
 import az.qazan.backend.companies.domain.Company;
+import az.qazan.backend.companies.domain.CompanyStatus;
 import az.qazan.backend.companies.domain.CompanyRepository;
 import az.qazan.backend.user.domain.Role;
 import az.qazan.backend.user.domain.User;
@@ -22,9 +23,21 @@ public class BusinessAccess {
     private final CompanyRepository companies;
     private final UserRepository users;
 
-    /** The owner's company, or the company a cashier is attached to. */
+    /**
+     * The owner's company, or the company a cashier is attached to — for
+     * till work with customers (lookup, pending rewards, spend sessions).
+     * Only an APPROVED company may touch customers: a self-registered,
+     * still-PENDING (or SUSPENDED) business must not be able to look up
+     * people by phone, credit them or push them notifications.
+     */
     @Transactional(readOnly = true)
     public Company companyOf(UUID userId) {
+        Company company = resolveCompany(userId);
+        requireApproved(company);
+        return company;
+    }
+
+    private Company resolveCompany(UUID userId) {
         User user = users.findById(userId)
                 .orElseThrow(() -> NotFoundException.of(ErrorCode.USER_NOT_FOUND));
         if (user.getRole() == Role.CASHIER) {
@@ -49,10 +62,22 @@ public class BusinessAccess {
                 .isPresent();
     }
 
-    /** Owner or cashier of this company; anyone else gets 403. */
+    /**
+     * Owner or cashier of this company, and the company is APPROVED;
+     * anyone else gets 403. Used by every action that touches a customer
+     * (stamps, coins, rewards, spend sessions).
+     */
     public void requireStaff(Company company, UUID userId) {
         if (!isStaff(company, userId)) {
             throw new AppException(ErrorCode.FORBIDDEN);
+        }
+        requireApproved(company);
+    }
+
+    /** 403 unless an admin has approved this company. */
+    public void requireApproved(Company company) {
+        if (company.getStatus() != CompanyStatus.APPROVED) {
+            throw new AppException(ErrorCode.COMPANY_NOT_APPROVED);
         }
     }
 }

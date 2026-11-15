@@ -364,6 +364,12 @@ public class NfcService {
         if (lat == null || lng == null || c.getLatitude() == null || c.getLongitude() == null) {
             return null;
         }
+        // Junk coordinates (NaN, out of range) would make the haversine NaN,
+        // and Math.round(NaN) == 0 — i.e. "at the venue". Treat as missing.
+        if (!Double.isFinite(lat) || !Double.isFinite(lng)
+                || Math.abs(lat) > 90 || Math.abs(lng) > 180) {
+            return null;
+        }
         double earth = 6371000;
         double dLat = Math.toRadians(lat - c.getLatitude());
         double dLng = Math.toRadians(lng - c.getLongitude());
@@ -551,7 +557,7 @@ public class NfcService {
     @Transactional(readOnly = true)
     public List<NfcTap> companyTaps(UUID companyId, int days, int limit) {
         return taps.forCompanySince(companyId,
-                Instant.now().minus(Math.max(1, days), ChronoUnit.DAYS),
+                Instant.now().minus(Math.min(365, Math.max(1, days)), ChronoUnit.DAYS),
                 PageRequest.of(0, Math.min(Math.max(limit, 1), 500)));
     }
 

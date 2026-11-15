@@ -40,12 +40,18 @@ public class PasswordResetService {
     private final PasswordEncoder passwordEncoder;
     private final MailService mail;
 
+    /**
+     * Emails a reset code. Product decision (2026-11-15): tell the user when
+     * no active account uses this email instead of a silent success — the
+     * auth rate limit keeps address probing slow.
+     */
     @Transactional
     public void request(String email) {
-        users.findByEmailIgnoreCase(email.trim()).ifPresent(user -> {
-            if (!user.isActive()) {
-                return; // deleted/disabled accounts cannot reset
-            }
+        az.qazan.backend.user.domain.User found = users.findByEmailIgnoreCase(email.trim())
+                .filter(az.qazan.backend.user.domain.User::isActive)
+                .orElseThrow(() -> new az.qazan.backend.common.exception.AppException(
+                        az.qazan.backend.common.exception.ErrorCode.AUTH_EMAIL_NOT_REGISTERED));
+        java.util.Optional.of(found).ifPresent(user -> {
             // One code a minute, so asking again cannot refill the attempts.
             boolean tooSoon = tokens
                     .findTopByUserIdAndUsedAtIsNullOrderByCreatedAtDesc(user.getId())
@@ -65,7 +71,7 @@ public class PasswordResetService {
                     .expiresAt(Instant.now().plus(TTL))
                     .build());
 
-            mail.sendPasswordResetCode(user.getEmail(), code);
+            mail.sendPasswordResetCode(user.getEmail(), code, user.getLocale());
         });
         // No-op for unknown emails — response is identical either way.
     }

@@ -43,6 +43,7 @@ public class AuthService {
     private static final Base64.Encoder URL_ENCODER =
             Base64.getUrlEncoder().withoutPadding();
 
+    private final AppleTokenService appleTokens;
     private final UserService userService;
     private final UserMapper userMapper;
     private final RefreshTokenRepository refreshRepo;
@@ -122,6 +123,10 @@ public class AuthService {
         }
         if (apple) {
             user.setAppleSub(identity.subject());
+            String refresh = appleTokens.exchangeCode(req.authorizationCode());
+            if (refresh != null) {
+                user.setAppleRefreshToken(refresh);
+            }
         } else {
             user.setGoogleSub(identity.subject());
         }

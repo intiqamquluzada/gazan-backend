@@ -94,12 +94,29 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
         return w.count() <= limit;
     }
 
-    private static String clientIp(HttpServletRequest req) {
+    /**
+     * The address to rate-limit by. X-Forwarded-For is client-controlled,
+     * so it is trusted only when the request comes from our own reverse
+     * proxy (Apache on the same host); then the RIGHTMOST entry — the one
+     * the proxy appended — is the real client. Otherwise the socket address.
+     */
+    static String clientIp(HttpServletRequest req) {
+        String remote = req.getRemoteAddr();
         String forwarded = req.getHeader("X-Forwarded-For");
-        if (forwarded != null && !forwarded.isBlank()) {
-            return forwarded.split(",", 2)[0].trim();
+        if (forwarded != null && !forwarded.isBlank() && isTrustedProxy(remote)) {
+            String[] hops = forwarded.split(",");
+            String last = hops[hops.length - 1].trim();
+            if (!last.isEmpty()) {
+                return last;
+            }
         }
-        return req.getRemoteAddr();
+        return remote;
+    }
+
+    private static boolean isTrustedProxy(String addr) {
+        return addr != null && (addr.equals("127.0.0.1")
+                || addr.equals("::1")
+                || addr.equals("0:0:0:0:0:0:0:1"));
     }
 
     private void reject(HttpServletResponse res, String path) throws IOException {

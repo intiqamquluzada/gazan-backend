@@ -80,7 +80,7 @@ public class AuthController {
     public ResponseEntity<ApiResponse<Void>> forgotPassword(
             @Valid @RequestBody ForgotPasswordRequest body) {
         passwordReset.request(body.email());
-        // Always 200 — never reveal whether the email is registered.
+        // 404 AUTH_EMAIL_NOT_REGISTERED when no active account uses it.
         return ResponseEntity.ok(ApiResponse.message("OK"));
     }
 

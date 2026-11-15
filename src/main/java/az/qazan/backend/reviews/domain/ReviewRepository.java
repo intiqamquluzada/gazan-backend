@@ -79,4 +79,10 @@ public interface ReviewRepository extends JpaRepository<Review, UUID> {
             order by r.createdAt desc
             """)
     List<ReviewView> findViewsByCompany(@Param("companyId") UUID companyId);
+
+    /** Account deletion: the star rating stays, the free text goes. */
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.data.jpa.repository.Query(
+            "update Review r set r.comment = null where r.userId = :uid")
+    void blankCommentsOf(@org.springframework.data.repository.query.Param("uid") UUID userId);
 }

@@ -1,5 +1,6 @@
 package az.qazan.backend.loyalty.application;
 
+import az.qazan.backend.common.exception.BadRequestException;
 import az.qazan.backend.common.exception.AppException;
 import az.qazan.backend.common.exception.ErrorCode;
 import az.qazan.backend.common.exception.NotFoundException;
@@ -88,6 +89,10 @@ public class LoyaltyCardService {
         LoyaltyProgram program = programs.getById(programId);
         Company company = program.getCompany();
         access.requireStaff(company, businessOwnerId);
+        if (businessOwnerId.equals(customerId)) {
+            // Staff may not stamp their own card.
+            throw new BadRequestException(ErrorCode.BAD_REQUEST);
+        }
         LoyaltyCard card = joinProgram(customerId, programId);
         LoyaltyCard stamped = addStamp(card.getId(), amount, note);
         // A hand-added stamp has no tap celebration, so tell the customer.

@@ -76,6 +76,10 @@ public class User extends BaseEntity {
     @Column(name = "apple_sub", length = 255)
     private String appleSub;
 
+    /** Apple refresh token, revoked when the account is deleted. */
+    @Column(name = "apple_refresh_token", length = 512)
+    private String appleRefreshToken;
+
     /** Stays null until SMS verification ships. */
     @Column(name = "phone_verified_at")
     private Instant phoneVerifiedAt;

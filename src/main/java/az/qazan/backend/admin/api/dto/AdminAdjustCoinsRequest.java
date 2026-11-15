@@ -14,6 +14,7 @@ import java.util.UUID;
  */
 public record AdminAdjustCoinsRequest(
         @NotNull UUID userId,
+        @jakarta.validation.constraints.NotNull
         UUID companyId,
         @NotNull @Min(-1000000) @Max(1000000) Integer amount,
         @Size(max = 200) String note

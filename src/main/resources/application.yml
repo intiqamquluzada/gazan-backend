@@ -67,6 +67,10 @@ qazan:
   social:
     google-client-ids: ${GOOGLE_CLIENT_IDS:}
     apple-client-ids: ${APPLE_CLIENT_IDS:}
+    apple:
+      team-id: ${APPLE_TEAM_ID:}
+      key-id: ${APPLE_KEY_ID:}
+      private-key-file: ${APPLE_PRIVATE_KEY_FILE:}
   coins:
     max-grant: ${QAZAN_COINS_MAX_GRANT:10000}
   rate-limit:
@@ -88,10 +92,11 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        # metrics removed: it was readable by any signed-in user.
+        include: health,info
   endpoint:
     health:
-      show-details: when_authorized
+      show-details: never
 
 # ── OpenAPI / Swagger UI ─────────────────────────────────────
 springdoc:

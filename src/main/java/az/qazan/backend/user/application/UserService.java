@@ -33,6 +33,11 @@ public class UserService {
     private final UserRepository repository;
     private final RefreshTokenRepository refreshRepository;
     private final DeviceTokenRepository deviceTokens;
+    private final az.qazan.backend.auth.domain.PasswordResetTokenRepository resetTokens;
+    private final az.qazan.backend.favorites.domain.FavoriteRepository favorites;
+    private final az.qazan.backend.notifications.domain.NotificationReadRepository notificationReads;
+    private final az.qazan.backend.reviews.domain.ReviewRepository reviews;
+    private final az.qazan.backend.auth.application.AppleTokenService appleTokens;
     private final PasswordEncoder passwordEncoder;
 
     /** Finds an account by email or phone, whichever was typed. */
@@ -139,8 +144,16 @@ public class UserService {
     @Transactional
     public void deactivate(UUID userId) {
         User u = getById(userId);
+        // Sign in with Apple: revoke the Apple session too (guideline 5.1.1(v)).
+        appleTokens.revoke(u.getAppleRefreshToken());
+        u.setAppleRefreshToken(null);
         refreshRepository.revokeAllForUser(u, Instant.now());
         deviceTokens.deleteByUserId(u.getId());
+        // Personal traces beyond the user row itself.
+        resetTokens.deleteByUserId(u.getId());
+        favorites.deleteAllOfUser(u.getId());
+        notificationReads.deleteAllOfUser(u.getId());
+        reviews.blankCommentsOf(u.getId());
         u.setEmail("deleted+" + u.getId() + "@qazan.az");
         u.setFullName("Silinmiş istifadəçi");
         u.setPhone(null);
