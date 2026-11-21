@@ -1,8 +1,11 @@
 package az.qazan.backend.loyalty.application;
 
+import az.qazan.backend.common.exception.BadRequestException;
+import az.qazan.backend.common.exception.AppException;
 import az.qazan.backend.common.exception.ErrorCode;
 import az.qazan.backend.common.exception.NotFoundException;
-import az.qazan.backend.common.exception.UnauthorizedException;
+import az.qazan.backend.notifications.application.NotificationService;
+import az.qazan.backend.companies.application.BusinessAccess;
 import az.qazan.backend.companies.domain.Company;
 import az.qazan.backend.loyalty.domain.LoyaltyCard;
 import az.qazan.backend.loyalty.domain.LoyaltyCardRepository;
@@ -27,6 +30,8 @@ public class LoyaltyCardService {
     private final LoyaltyEventRepository events;
     private final LoyaltyProgramService programs;
     private final UserRepository users;
+    private final BusinessAccess access;
+    private final NotificationService notifications;
 
     @Transactional(readOnly = true)
     public List<LoyaltyCard> myCards(UUID userId) {
@@ -35,11 +40,14 @@ public class LoyaltyCardService {
 
     @Transactional
     public LoyaltyCard joinProgram(UUID userId, UUID programId) {
+        LoyaltyProgram program = programs.getById(programId);
+        if (!program.isOpen()) {
+            throw new AppException(ErrorCode.PROGRAM_CLOSED);
+        }
         return cards.findByUserIdAndProgramId(userId, programId)
                 .orElseGet(() -> {
                     User user = users.findById(userId)
                             .orElseThrow(() -> NotFoundException.of(ErrorCode.USER_NOT_FOUND));
-                    LoyaltyProgram program = programs.getById(programId);
                     LoyaltyCard card = LoyaltyCard.builder()
                             .user(user)
                             .program(program)
@@ -69,8 +77,8 @@ public class LoyaltyCardService {
     }
 
     /**
-     * Business owner adds N stamps to a customer's card by scanning their QR.
-     * Caller must own the company that runs the program.
+     * Staff add N stamps to a customer's card by hand.
+     * Caller must be the owner or a cashier of the company running the program.
      */
     @Transactional
     public LoyaltyCard scan(UUID businessOwnerId,
@@ -80,11 +88,18 @@ public class LoyaltyCardService {
                             String note) {
         LoyaltyProgram program = programs.getById(programId);
         Company company = program.getCompany();
-        if (company.getOwner() == null || !company.getOwner().getId().equals(businessOwnerId)) {
-            throw new UnauthorizedException(ErrorCode.FORBIDDEN);
+        access.requireStaff(company, businessOwnerId);
+        if (businessOwnerId.equals(customerId)) {
+            // Staff may not stamp their own card.
+            throw new BadRequestException(ErrorCode.BAD_REQUEST);
         }
         LoyaltyCard card = joinProgram(customerId, programId);
-        return addStamp(card.getId(), amount, note);
+        LoyaltyCard stamped = addStamp(card.getId(), amount, note);
+        // A hand-added stamp has no tap celebration, so tell the customer.
+        notifications.notifyUserLocalized(customerId, "notify.stamp_added",
+                java.util.Map.of("route", "/cards"),
+                amount, company.getName(), stamped.getStamps(), stamped.getStampsRequired());
+        return stamped;
     }
 
     @Transactional

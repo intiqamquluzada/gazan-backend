@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -40,11 +41,28 @@ public class CoinRewardController {
     @Operation(summary = "List a company's coin rewards")
     @GetMapping("/companies/{companyId}/coin-rewards")
     public List<CoinRewardResponse> list(
+            @CurrentUser AppUserPrincipal me,
             @PathVariable UUID companyId,
             @RequestParam(defaultValue = "true") boolean activeOnly
     ) {
-        return service.listForCompany(companyId, activeOnly).stream()
+        // activeOnly=false shows paused items, but only to the venue's owner.
+        return service.listForCaller(companyId, activeOnly,
+                        me == null ? null : me.getId(),
+                        me != null && me.getRole() == az.qazan.backend.user.domain.Role.ADMIN)
+                .stream()
                 .map(CoinRewardController::toResponse).toList();
+    }
+
+    @Operation(summary = "Edit or pause a coin reward (business owner)")
+    @PreAuthorize("hasRole('BUSINESS_OWNER') or hasRole('ADMIN')")
+    @PutMapping("/coin-rewards/{id}")
+    public CoinRewardResponse update(
+            @CurrentUser AppUserPrincipal me,
+            @PathVariable UUID id,
+            @Valid @RequestBody az.qazan.backend.coins.api.dto.UpdateCoinRewardRequest body
+    ) {
+        return toResponse(service.update(id, me.getId(), body.title(),
+                body.description(), body.coinCost(), body.active()));
     }
 
     @Operation(summary = "Platform-wide active reward catalog (customer wallet)")

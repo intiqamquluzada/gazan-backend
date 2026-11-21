@@ -9,15 +9,19 @@ import az.qazan.backend.coins.domain.CoinRewardRepository;
 import az.qazan.backend.coins.domain.CoinTransaction;
 import az.qazan.backend.coins.domain.CoinTransactionRepository;
 import az.qazan.backend.coins.domain.CoinTransactionType;
+import az.qazan.backend.common.exception.AppException;
 import az.qazan.backend.common.exception.BadRequestException;
 import az.qazan.backend.common.exception.ErrorCode;
 import az.qazan.backend.common.exception.NotFoundException;
 import az.qazan.backend.common.exception.UnauthorizedException;
+import az.qazan.backend.notifications.application.NotificationService;
+import az.qazan.backend.companies.application.BusinessAccess;
 import az.qazan.backend.companies.domain.Company;
 import az.qazan.backend.companies.domain.CompanyRepository;
 import az.qazan.backend.user.domain.User;
 import az.qazan.backend.user.domain.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,6 +36,11 @@ public class CoinService {
     private final CoinRewardRepository rewards;
     private final UserRepository users;
     private final CompanyRepository companies;
+    private final BusinessAccess access;
+    private final NotificationService notifications;
+
+    @Value("${qazan.coins.max-grant:10000}")
+    private int maxGrant;
 
     @Transactional(readOnly = true)
     public CoinSummaryResponse summary(UUID userId) {
@@ -50,6 +59,12 @@ public class CoinService {
         return new CoinSummaryResponse(total, perCompany, recent);
     }
 
+    /** The customer's coins at one venue: the only coins spendable there. */
+    @Transactional(readOnly = true)
+    public long balanceAt(UUID userId, UUID companyId) {
+        return ledger.balanceOfAtCompany(userId, companyId);
+    }
+
     /** Credit coins to a user (scan reward / seed / future earning hook). */
     @Transactional
     public CoinSummaryResponse grant(UUID userId, UUID companyId,
@@ -61,15 +76,36 @@ public class CoinService {
         return summary(userId);
     }
 
-    /** Spend coins on a reward / cash discount. */
+    /** The till's manual credit: only staff of that company, and capped per call. */
+    @Transactional
+    public CoinSummaryResponse grantByStaff(UUID callerId, UUID customerId,
+                                            UUID companyId, int amount, String note) {
+        Company company = companies.findById(companyId)
+                .orElseThrow(() -> NotFoundException.of(ErrorCode.NOT_FOUND));
+        access.requireStaff(company, callerId);
+        if (callerId.equals(customerId)) {
+            throw new BadRequestException(ErrorCode.BAD_REQUEST);
+        }
+        if (amount > maxGrant) {
+            throw new AppException(ErrorCode.GRANT_CAP_EXCEEDED);
+        }
+        CoinSummaryResponse result = grant(customerId, companyId, amount, note);
+        // A hand-given credit has no tap celebration, so tell the customer.
+        notifications.notifyUserLocalized(customerId, "notify.coins_added",
+                java.util.Map.of("route", "/cards"), amount, company.getName());
+        return result;
+    }
+
+    /** Spends coins earned at this company; other venues' coins do not count. */
     @Transactional
     public CoinSummaryResponse spend(UUID userId, UUID companyId,
                                      int amount, String note) {
         if (amount <= 0) {
             throw new BadRequestException(ErrorCode.BAD_REQUEST);
         }
-        if (ledger.balanceOf(userId) < amount) {
-            throw new BadRequestException(ErrorCode.BAD_REQUEST);
+        lockUser(userId);
+        if (ledger.balanceOfAtCompany(userId, companyId) < amount) {
+            throw new AppException(ErrorCode.COIN_INSUFFICIENT);
         }
         record(userId, companyId, -amount, CoinTransactionType.SPEND, note);
         return summary(userId);
@@ -92,9 +128,10 @@ public class CoinService {
         if (!reward.isActive()) {
             throw new BadRequestException(ErrorCode.BAD_REQUEST);
         }
+        lockUser(customerId);
         long balance = ledger.balanceOfAtCompany(customerId, company.getId());
         if (balance < reward.getCoinCost()) {
-            throw new BadRequestException(ErrorCode.BAD_REQUEST);
+            throw new AppException(ErrorCode.COIN_INSUFFICIENT);
         }
         record(customerId, company.getId(), -reward.getCoinCost(),
                 CoinTransactionType.SPEND, "Mükafat: " + reward.getTitle());
@@ -102,6 +139,11 @@ public class CoinService {
                 reward.getTitle(),
                 reward.getCoinCost(),
                 balance - reward.getCoinCost());
+    }
+
+    private void lockUser(UUID userId) {
+        users.lockById(userId)
+                .orElseThrow(() -> NotFoundException.of(ErrorCode.USER_NOT_FOUND));
     }
 
     private void record(UUID userId, UUID companyId, int signedAmount,

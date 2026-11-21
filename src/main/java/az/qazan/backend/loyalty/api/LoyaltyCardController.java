@@ -1,5 +1,7 @@
 package az.qazan.backend.loyalty.api;
 
+import az.qazan.backend.common.exception.AppException;
+import az.qazan.backend.common.exception.ErrorCode;
 import az.qazan.backend.common.security.AppUserPrincipal;
 import az.qazan.backend.common.security.CurrentUser;
 import az.qazan.backend.loyalty.api.dto.JoinProgramRequest;
@@ -49,12 +51,9 @@ public class LoyaltyCardController {
         return mapper.toCardResponse(cards.joinProgram(me.getId(), body.programId()));
     }
 
-    @Operation(summary = "Redeem one available reward on the given card")
+    @Operation(summary = "Closed: a reward is only marked used by the cashier")
     @PostMapping("/{id}/redeem")
-    public LoyaltyCardResponse redeem(
-            @CurrentUser AppUserPrincipal me,
-            @PathVariable UUID id
-    ) {
-        return mapper.toCardResponse(cards.redeem(me.getId(), id));
+    public LoyaltyCardResponse redeem(@PathVariable UUID id) {
+        throw new AppException(ErrorCode.FORBIDDEN);
     }
 }

@@ -35,7 +35,8 @@ public class PromotionsMapper {
                 p.getGradientStartHex(),
                 p.getGradientEndHex(),
                 p.getCta(),
-                p.getEndsAt()
+                p.getEndsAt(),
+                p.getImageUrl()
         );
     }
 }

@@ -59,8 +59,8 @@ public class CompanyController {
 
     @Operation(summary = "Get a single company by id")
     @GetMapping("/{id}")
-    public CompanyResponse get(@PathVariable UUID id) {
-        return mapper.toResponse(companies.getById(id));
+    public CompanyResponse get(@CurrentUser AppUserPrincipal me, @PathVariable UUID id) {
+        return mapper.toResponse(companies.getVisible(id, me));
     }
 
     @Operation(summary = "Get the company owned by the signed-in business user")

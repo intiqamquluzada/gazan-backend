@@ -2,17 +2,15 @@ package az.qazan.backend.coins.api.dto;
 
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
 
 import java.util.UUID;
 
-/**
- * A business owner credits coins to a customer (after scanning their QR).
- * {@code companyId} is optional but normally the owner's company.
- */
+/** Staff credit coins to a customer by hand at their own company. */
 public record GrantCoinsRequest(
         @NotNull UUID customerId,
-        UUID companyId,
+        @NotNull UUID companyId,
         @Positive int amount,
-        String note
+        @Size(max = 240) String note
 ) {
 }

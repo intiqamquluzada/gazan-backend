@@ -15,4 +15,8 @@ public interface NotificationReadRepository
          where r.userId = :uid
         """)
     Set<UUID> readNotificationIds(@Param("uid") UUID userId);
+
+    @org.springframework.data.jpa.repository.Modifying
+    @Query("delete from NotificationRead r where r.userId = :uid")
+    void deleteAllOfUser(@Param("uid") UUID userId);
 }

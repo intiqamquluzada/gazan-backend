@@ -11,6 +11,8 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
@@ -29,8 +31,10 @@ public class JwtTokenProvider {
 
     private static final String CLAIM_EMAIL = "email";
     private static final String CLAIM_ROLE  = "role";
+    private static final String DEV_SECRET_PREFIX = "dev-only-secret";
 
     private final JwtProperties props;
+    private final Environment environment;
     private SecretKey signingKey;
 
     @PostConstruct
@@ -38,6 +42,11 @@ public class JwtTokenProvider {
         final String secret = props.secret();
         if (secret == null || secret.isBlank()) {
             throw new IllegalStateException("app.jwt.secret is required");
+        }
+        if (secret.startsWith(DEV_SECRET_PREFIX)
+                && !environment.acceptsProfiles(Profiles.of("dev", "test"))) {
+            throw new IllegalStateException(
+                    "JWT_SECRET must be set outside the dev and test profiles");
         }
         // Treat as raw UTF-8 — must be ≥ 32 bytes for HS256.
         final byte[] bytes = secret.getBytes(StandardCharsets.UTF_8);

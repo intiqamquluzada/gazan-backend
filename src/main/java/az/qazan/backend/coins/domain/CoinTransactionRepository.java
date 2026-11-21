@@ -12,6 +12,27 @@ public interface CoinTransactionRepository
 
     List<CoinTransaction> findTop15ByUserIdOrderByCreatedAtDesc(UUID userId);
 
+    /** One row per ledger entry at a company, for the business analytics. */
+    @Query("""
+        select t.amount as amount, t.createdAt as createdAt, t.user.id as userId
+          from CoinTransaction t
+         where t.company.id = :cid and t.createdAt >= :since
+        """)
+    List<CoinLedgerRow> rowsAtCompanySince(@Param("cid") UUID cid,
+                                           @Param("since") java.time.Instant since);
+
+    @Query("""
+        select coalesce(sum(t.amount), 0) from CoinTransaction t
+         where t.company.id = :cid and t.amount > 0
+        """)
+    long totalEarnedAtCompany(@Param("cid") UUID cid);
+
+    @Query("""
+        select coalesce(-sum(t.amount), 0) from CoinTransaction t
+         where t.company.id = :cid and t.amount < 0
+        """)
+    long totalSpentAtCompany(@Param("cid") UUID cid);
+
     @Query("""
         select coalesce(sum(t.amount), 0)
           from CoinTransaction t

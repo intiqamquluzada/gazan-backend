@@ -24,6 +24,16 @@ public interface LoyaltyEventRepository extends JpaRepository<LoyaltyEvent, UUID
             @Param("since") Instant since
     );
 
+    @Query("""
+           select e.type as type, e.amount as amount,
+                  e.createdAt as createdAt, c.user.id as userId
+             from LoyaltyEvent e join e.card c
+            where c.company.id = :companyId and e.createdAt >= :since
+           """)
+    List<LoyaltyEventRow> rowsAtCompanySince(
+            @Param("companyId") UUID companyId,
+            @Param("since") Instant since);
+
     /** Recent activity for one customer at one company (newest first). */
     @Query("""
            select e from LoyaltyEvent e

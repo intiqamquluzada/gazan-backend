@@ -40,6 +40,9 @@ dependencies {
     // ── Email (password-reset codes; SMTP optional at runtime) ─
     implementation 'org.springframework.boot:spring-boot-starter-mail'
 
+    // ── Push (Firebase Cloud Messaging HTTP v1 auth) ───────────
+    implementation 'com.google.auth:google-auth-library-oauth2-http:1.30.1'
+
     // ── API docs (Swagger UI) ──────────────────────────────────
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0'
 
@@ -56,6 +59,11 @@ dependencies {
 
 tasks.withType(JavaCompile).configureEach {
     options.compilerArgs << '-parameters'
+}
+
+// Local runs default to the dev profile; packaged jars default to prod.
+tasks.named('bootRun') {
+    environment 'SPRING_PROFILES_ACTIVE', System.getenv('SPRING_PROFILES_ACTIVE') ?: 'dev'
 }
 
 tasks.withType(Test).configureEach {

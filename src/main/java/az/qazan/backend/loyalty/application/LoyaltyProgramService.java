@@ -1,11 +1,13 @@
 package az.qazan.backend.loyalty.application;
 
+import az.qazan.backend.common.exception.ConflictException;
 import az.qazan.backend.common.exception.ErrorCode;
 import az.qazan.backend.common.exception.NotFoundException;
 import az.qazan.backend.companies.domain.Company;
 import az.qazan.backend.companies.domain.CompanyRepository;
 import az.qazan.backend.loyalty.api.dto.CreateProgramRequest;
 import az.qazan.backend.loyalty.api.dto.UpdateProgramRequest;
+import az.qazan.backend.loyalty.domain.LoyaltyCardRepository;
 import az.qazan.backend.loyalty.domain.LoyaltyProgram;
 import az.qazan.backend.loyalty.domain.LoyaltyProgramRepository;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +23,7 @@ public class LoyaltyProgramService {
 
     private final LoyaltyProgramRepository programs;
     private final CompanyRepository companies;
+    private final LoyaltyCardRepository cards;
 
     @Transactional(readOnly = true)
     public List<LoyaltyProgram> listForCompany(UUID companyId, boolean activeOnly) {
@@ -50,6 +53,7 @@ public class LoyaltyProgramService {
                 .rewardType(req.rewardType())
                 .rewardValue(req.rewardValue())
                 .rewardItem(req.rewardItem() == null ? "məhsul" : req.rewardItem().trim())
+                .expiresAt(req.expiresAt())
                 .active(true)
                 .build();
         return programs.save(p);
@@ -69,6 +73,11 @@ public class LoyaltyProgramService {
         if (req.rewardValue() != null) p.setRewardValue(req.rewardValue());
         if (req.rewardItem() != null) p.setRewardItem(req.rewardItem().trim());
         if (req.active() != null) p.setActive(req.active());
+        if (Boolean.TRUE.equals(req.clearExpiresAt())) {
+            p.setExpiresAt(null);
+        } else if (req.expiresAt() != null) {
+            p.setExpiresAt(req.expiresAt());
+        }
         return p;
     }
 
@@ -78,6 +87,10 @@ public class LoyaltyProgramService {
         Company company = p.getCompany();
         if (company.getOwner() == null || !company.getOwner().getId().equals(requesterId)) {
             throw new NotFoundException(ErrorCode.NOT_FOUND);
+        }
+        // Earned but unclaimed rewards would vanish with the cards.
+        if (cards.existsByProgramIdAndRewardsAvailableGreaterThan(programId, 0)) {
+            throw new ConflictException(ErrorCode.PROGRAM_HAS_PENDING_REWARDS);
         }
         programs.delete(p);
     }

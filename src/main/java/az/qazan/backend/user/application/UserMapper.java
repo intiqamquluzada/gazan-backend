@@ -25,7 +25,9 @@ public class UserMapper {
                 u.getLocale(),
                 u.isActive(),
                 u.getCreatedAt(),
-                u.getLastLoginAt()
+                u.getLastLoginAt(),
+                u.getPhone() != null,
+                u.getStaffCompanyId()
         );
     }
 }

@@ -23,6 +23,9 @@ public record UserResponse(
         AppLocale locale,
         boolean active,
         Instant createdAt,
-        Instant lastLoginAt
+        Instant lastLoginAt,
+        /** False until a phone number is on file (e.g. after social sign-in). */
+        boolean profileComplete,
+        UUID staffCompanyId
 ) {
 }

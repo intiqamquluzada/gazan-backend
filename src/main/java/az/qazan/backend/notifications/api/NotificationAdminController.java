@@ -1,5 +1,6 @@
 package az.qazan.backend.notifications.api;
 
+import az.qazan.backend.admin.application.AdminAuditService;
 import az.qazan.backend.common.security.AppUserPrincipal;
 import az.qazan.backend.common.security.CurrentUser;
 import az.qazan.backend.notifications.api.dto.CreateNotificationRequest;
@@ -30,6 +31,7 @@ import java.util.UUID;
 public class NotificationAdminController {
 
     private final NotificationService notifications;
+    private final AdminAuditService audit;
 
     /**
      * Admin creates a notification. The body's {@code targetType}
@@ -69,6 +71,7 @@ public class NotificationAdminController {
     public NotificationResponse approve(
             @CurrentUser AppUserPrincipal me,
             @PathVariable UUID id) {
+        audit.record(me.getId(), "NOTIFICATION_APPROVE", "NOTIFICATION", id, null);
         return notifications.approve(id, me.getId());
     }
 
@@ -77,6 +80,7 @@ public class NotificationAdminController {
     public NotificationResponse reject(
             @CurrentUser AppUserPrincipal me,
             @PathVariable UUID id) {
+        audit.record(me.getId(), "NOTIFICATION_REJECT", "NOTIFICATION", id, null);
         return notifications.reject(id, me.getId());
     }
 }

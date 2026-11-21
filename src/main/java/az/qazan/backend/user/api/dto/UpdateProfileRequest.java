@@ -1,9 +1,11 @@
 package az.qazan.backend.user.api.dto;
 
 import az.qazan.backend.user.domain.AppLocale;
+import jakarta.validation.constraints.Past;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
-import org.hibernate.validator.constraints.URL;
+
+import java.time.LocalDate;
 
 /**
  * All fields are optional — only provided values overwrite. Email and
@@ -16,13 +18,18 @@ public record UpdateProfileRequest(
         @Pattern(regexp = "^\\+?[0-9 ()-]{6,32}$", message = "{validation.user.phone.format}")
         String phone,
 
-        @URL(message = "{validation.user.avatar.url}")
+        @jakarta.validation.constraints.Pattern(
+                regexp = "^$|^/api/v1/images/[A-Za-z0-9-]+$|^https://[^\s]+$",
+                message = "{validation.user.avatar.url}")
         @Size(max = 512)
         String avatarUrl,
 
         @Size(max = 120, message = "{validation.user.business_name.size}")
         String businessName,
 
-        AppLocale locale
+        AppLocale locale,
+
+        @Past(message = "{validation.user.birth_date.past}")
+        LocalDate birthDate
 ) {
 }

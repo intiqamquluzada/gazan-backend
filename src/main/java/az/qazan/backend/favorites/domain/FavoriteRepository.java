@@ -13,6 +13,10 @@ public interface FavoriteRepository extends JpaRepository<Favorite, UUID> {
 
     void deleteByUserIdAndCompanyId(UUID userId, UUID companyId);
 
+    @org.springframework.data.jpa.repository.Modifying
+    @Query("delete from Favorite f where f.userId = :userId")
+    void deleteAllOfUser(@Param("userId") UUID userId);
+
     @Query("select f.companyId from Favorite f where f.userId = :userId")
     List<UUID> findCompanyIdsByUserId(@Param("userId") UUID userId);
 }

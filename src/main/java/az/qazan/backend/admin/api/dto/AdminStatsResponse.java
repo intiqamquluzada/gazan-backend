@@ -1,5 +1,6 @@
 package az.qazan.backend.admin.api.dto;
 
+import java.time.LocalDate;
 import java.util.List;
 
 /**
@@ -18,6 +19,13 @@ public record AdminStatsResponse(
         long coinsSpent,
         long coinTransactions,
         List<AdminUserResponse> recentUsers,
-        List<AdminCompanyResponse> recentCompanies
+        List<AdminCompanyResponse> recentCompanies,
+        long newUsers7d,
+        long newCompanies7d,
+        long pendingCompanies,
+        long pendingNotifications,
+        long activeUsers30d,
+        List<DailyCount> signups
 ) {
+    public record DailyCount(LocalDate date, long count) {}
 }

@@ -22,6 +22,7 @@ public record AdminPromotionRequest(
         @Size(max = 40) String cta,
         Boolean active,
         Instant endsAt,
-        Integer sortOrder
+        Integer sortOrder,
+        @Size(max = 512) String imageUrl
 ) {
 }

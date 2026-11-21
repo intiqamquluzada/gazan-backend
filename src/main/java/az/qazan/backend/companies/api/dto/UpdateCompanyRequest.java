@@ -1,6 +1,9 @@
 package az.qazan.backend.companies.api.dto;
 
 import az.qazan.backend.companies.domain.BusinessCategory;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 public record UpdateCompanyRequest(
@@ -13,13 +16,15 @@ public record UpdateCompanyRequest(
         @Size(max = 32) String phone,
         @Size(max = 64) String instagram,
         @Size(max = 120) String workingHours,
-        Double latitude,
-        Double longitude,
+        @DecimalMin("-90") @DecimalMax("90") Double latitude,
+        @DecimalMin("-180") @DecimalMax("180") Double longitude,
         @Size(max = 255) String amenities,
         @Size(max = 2000) String photoUrls,
         @Size(max = 512) String menuUrl,
-        Double coinRate,
+        @DecimalMin("0") @DecimalMax("1000") Double coinRate,
         @Size(max = 512) String logoUrl,
+        @Pattern(regexp = "(?i)AZN|TRY") String currency,
+        @Pattern(regexp = "(?i)AZ|TR") String country,
 
         // Optional translations — set per language; absent values fall
         // back to the Azerbaijani defaults above on read.

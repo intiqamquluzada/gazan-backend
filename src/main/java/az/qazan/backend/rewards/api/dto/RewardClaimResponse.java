@@ -20,6 +20,12 @@ public record RewardClaimResponse(
         int coinCost,       // 0 for CARD
         String status,      // "ACTIVE" | "USED"
         Instant createdAt,
-        Instant usedAt      // null when ACTIVE
+        Instant usedAt,     // null when ACTIVE
+        // How the reward is described: FREE_ITEM | PERCENTAGE_DISCOUNT |
+        // FIXED_DISCOUNT | CASHBACK for stamp gifts, COIN for bought vouchers.
+        String rewardType,
+        java.math.BigDecimal rewardValue,
+        String rewardItem,
+        String currency
 ) {
 }

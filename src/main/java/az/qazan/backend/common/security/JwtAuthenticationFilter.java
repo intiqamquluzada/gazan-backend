@@ -1,5 +1,7 @@
 package az.qazan.backend.common.security;
 
+import az.qazan.backend.user.domain.User;
+import az.qazan.backend.user.domain.UserRepository;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -14,6 +16,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.UUID;
 
 /**
  * Validates the {@code Authorization: Bearer …} header on every request.
@@ -30,6 +33,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private static final String PREFIX = "Bearer ";
 
     private final JwtTokenProvider tokens;
+    private final UserRepository users;
 
     @Override
     protected void doFilterInternal(
@@ -43,14 +47,24 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             try {
                 String token = header.substring(PREFIX.length());
                 Claims claims = tokens.parse(token);
-                AppUserPrincipal principal = tokens.toPrincipal(claims);
-
-                UsernamePasswordAuthenticationToken auth =
-                        new UsernamePasswordAuthenticationToken(
-                                principal, null, principal.getAuthorities());
-                auth.setDetails(
-                        new WebAuthenticationDetailsSource().buildDetails(req));
-                SecurityContextHolder.getContext().setAuthentication(auth);
+                // The token only proves identity. Role and active flag come
+                // from the database so blocks and demotions apply at once.
+                User user = users.findById(UUID.fromString(claims.getSubject()))
+                        .orElse(null);
+                if (user != null && user.isActive()) {
+                    AppUserPrincipal principal = AppUserPrincipal.builder()
+                            .id(user.getId())
+                            .email(user.getEmail())
+                            .role(user.getRole())
+                            .active(true)
+                            .build();
+                    UsernamePasswordAuthenticationToken auth =
+                            new UsernamePasswordAuthenticationToken(
+                                    principal, null, principal.getAuthorities());
+                    auth.setDetails(
+                            new WebAuthenticationDetailsSource().buildDetails(req));
+                    SecurityContextHolder.getContext().setAuthentication(auth);
+                }
             } catch (Exception ignored) {
                 // Leave the context empty — the entry point will return 401
                 // for protected endpoints; public endpoints continue normally.

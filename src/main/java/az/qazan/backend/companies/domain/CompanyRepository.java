@@ -12,11 +12,12 @@ public interface CompanyRepository extends JpaRepository<Company, UUID> {
 
     Optional<Company> findByOwnerId(UUID ownerId);
 
-    List<Company> findAllByFeaturedTrue();
+    List<Company> findAllByFeaturedTrueAndStatus(CompanyStatus status);
 
     @Query("""
         select c from Company c
-         where (:category is null or c.category = :category)
+         where c.status = az.qazan.backend.companies.domain.CompanyStatus.APPROVED
+           and (:category is null or c.category = :category)
            and (:q is null or :q = ''
                  or lower(c.name) like lower(concat('%', :q, '%'))
                  or lower(c.tagline) like lower(concat('%', :q, '%')))

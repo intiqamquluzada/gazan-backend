@@ -38,4 +38,8 @@ public class PasswordResetToken extends BaseEntity {
 
     @Column(name = "used_at")
     private Instant usedAt;
+
+    /** Wrong guesses so far; the code dies after five. */
+    @Column(name = "attempts", nullable = false)
+    private int attempts;
 }

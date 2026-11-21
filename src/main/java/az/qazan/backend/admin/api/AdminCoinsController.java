@@ -2,8 +2,11 @@ package az.qazan.backend.admin.api;
 
 import az.qazan.backend.admin.api.dto.AdminAdjustCoinsRequest;
 import az.qazan.backend.admin.api.dto.AdminCoinTxnResponse;
+import az.qazan.backend.admin.api.dto.AdminCompanyCoinsResponse;
 import az.qazan.backend.admin.api.dto.PageResponse;
 import az.qazan.backend.admin.application.AdminCoinService;
+import az.qazan.backend.common.security.AppUserPrincipal;
+import az.qazan.backend.common.security.CurrentUser;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -17,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -46,8 +50,17 @@ public class AdminCoinsController {
 
     @Operation(summary = "Manually adjust a user's coin balance (admin only)")
     @PostMapping("/adjust")
-    public AdminCoinTxnResponse adjust(@Valid @RequestBody AdminAdjustCoinsRequest body) {
+    public AdminCoinTxnResponse adjust(
+            @CurrentUser AppUserPrincipal me,
+            @Valid @RequestBody AdminAdjustCoinsRequest body) {
         return coins.adjust(
-                body.userId(), body.companyId(), body.amount(), body.note());
+                me.getId(), body.userId(), body.companyId(), body.amount(), body.note());
+    }
+
+    @Operation(summary = "Coin flow per business in the last N days (admin only)")
+    @GetMapping("/by-company")
+    public List<AdminCompanyCoinsResponse> byCompany(
+            @RequestParam(defaultValue = "30") int days) {
+        return coins.byCompany(days);
     }
 }

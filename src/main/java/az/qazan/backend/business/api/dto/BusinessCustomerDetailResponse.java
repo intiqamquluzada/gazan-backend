@@ -21,7 +21,9 @@ public record BusinessCustomerDetailResponse(
         int totalVisits,
         int cardCount,
         List<CardSummary> cards,
-        List<CustomerEvent> recentActivity
+        List<CustomerEvent> recentActivity,
+        /** Coins this customer holds at the venue. */
+        long coinBalance
 ) {
 
     public record CardSummary(

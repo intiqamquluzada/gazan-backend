@@ -2,6 +2,7 @@ package az.qazan.backend.rewards.api;
 
 import az.qazan.backend.common.security.AppUserPrincipal;
 import az.qazan.backend.common.security.CurrentUser;
+import az.qazan.backend.rewards.api.dto.PendingRewardResponse;
 import az.qazan.backend.rewards.api.dto.RewardClaimResponse;
 import az.qazan.backend.rewards.api.dto.UseRewardRequest;
 import az.qazan.backend.rewards.application.RewardService;
@@ -40,13 +41,22 @@ public class BusinessRewardController {
     @Operation(summary = "Active vouchers a customer can use at MY company")
     @GetMapping("/customers/{customerId}/active-at/{companyId}")
     public List<RewardClaimResponse> activeAtCompany(
+            @CurrentUser AppUserPrincipal me,
             @PathVariable UUID customerId,
             @PathVariable UUID companyId
     ) {
-        return rewards.activeAtCompany(customerId, companyId);
+        return rewards.activeAtCompanyForStaff(me, customerId, companyId);
+    }
+
+    @Operation(summary = "Everything waiting to be handed out at my venue")
+    @PreAuthorize("hasRole('BUSINESS_OWNER') or hasRole('CASHIER')")
+    @GetMapping("/pending")
+    public List<PendingRewardResponse> pending(@CurrentUser AppUserPrincipal me) {
+        return rewards.pendingAtMyCompany(me.getId());
     }
 
     @Operation(summary = "Mark a voucher used (cashier confirms claim)")
+    @PreAuthorize("hasRole('BUSINESS_OWNER') or hasRole('CASHIER')")
     @PostMapping("/use")
     public RewardClaimResponse use(
             @CurrentUser AppUserPrincipal me,

@@ -57,6 +57,10 @@ public class Promotion extends BaseEntity {
     @Column(name = "cta", length = 40)
     private String cta;
 
+    /** Optional background photo for the banner (absolute URL). */
+    @Column(name = "image_url", length = 512)
+    private String imageUrl;
+
     @Column(name = "active", nullable = false)
     private boolean active;
 

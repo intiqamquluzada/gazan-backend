@@ -63,4 +63,9 @@ public class LoyaltyProgram extends BaseEntity {
 
     @Column(name = "active", nullable = false)
     private boolean active;
+
+    /** Active and not past its end date. */
+    public boolean isOpen() {
+        return active && (expiresAt == null || expiresAt.isAfter(Instant.now()));
+    }
 }

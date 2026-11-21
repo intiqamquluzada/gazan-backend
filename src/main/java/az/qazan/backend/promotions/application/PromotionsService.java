@@ -69,6 +69,7 @@ public class PromotionsService {
                 .active(req.active() == null || req.active())
                 .endsAt(req.endsAt())
                 .sortOrder(req.sortOrder() == null ? 0 : req.sortOrder())
+                .imageUrl(trimOrNull(req.imageUrl()))
                 .build();
         return promotions.save(p);
     }
@@ -88,6 +89,7 @@ public class PromotionsService {
         if (req.active() != null) p.setActive(req.active());
         if (req.endsAt() != null) p.setEndsAt(req.endsAt());
         if (req.sortOrder() != null) p.setSortOrder(req.sortOrder());
+        if (req.imageUrl() != null) p.setImageUrl(trimOrNull(req.imageUrl()));
         return p;
     }
 

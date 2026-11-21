@@ -1,6 +1,7 @@
 package az.qazan.backend.admin.api.dto;
 
 import az.qazan.backend.companies.domain.Company;
+import az.qazan.backend.companies.domain.CompanyStatus;
 import az.qazan.backend.user.domain.User;
 
 import java.time.Instant;
@@ -17,7 +18,8 @@ public record AdminCompanyResponse(
         UUID ownerId,
         String ownerName,
         String ownerEmail,
-        Instant createdAt
+        Instant createdAt,
+        CompanyStatus status
 ) {
     /** Must be called inside an open transaction — touches the lazy owner. */
     public static AdminCompanyResponse from(Company c) {
@@ -33,7 +35,8 @@ public record AdminCompanyResponse(
                 owner == null ? null : owner.getId(),
                 owner == null ? null : owner.getFullName(),
                 owner == null ? null : owner.getEmail(),
-                c.getCreatedAt()
+                c.getCreatedAt(),
+                c.getStatus()
         );
     }
 }

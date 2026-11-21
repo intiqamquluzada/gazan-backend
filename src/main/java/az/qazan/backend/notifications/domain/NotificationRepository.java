@@ -9,6 +9,12 @@ import java.util.UUID;
 
 public interface NotificationRepository extends JpaRepository<Notification, UUID> {
 
+    long countByStatus(NotificationStatus status);
+
+    /** What one business owner has asked to send, newest first. */
+    List<Notification> findAllBySubmittedByOrderByCreatedAtDesc(
+            UUID submittedBy, org.springframework.data.domain.Pageable page);
+
     /** Admin sent list — every approved row, newest first. */
     @Query("""
         select n from Notification n

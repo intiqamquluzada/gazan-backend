@@ -3,9 +3,12 @@ package az.qazan.backend.auth.api;
 import az.qazan.backend.auth.api.dto.AuthResponse;
 import az.qazan.backend.auth.api.dto.ForgotPasswordRequest;
 import az.qazan.backend.auth.api.dto.LoginRequest;
+import az.qazan.backend.auth.api.dto.PhoneStartRequest;
+import az.qazan.backend.auth.api.dto.PhoneStartResponse;
 import az.qazan.backend.auth.api.dto.RefreshRequest;
 import az.qazan.backend.auth.api.dto.RegisterRequest;
 import az.qazan.backend.auth.api.dto.ResetPasswordRequest;
+import az.qazan.backend.auth.api.dto.SocialLoginRequest;
 import az.qazan.backend.auth.application.AuthService;
 import az.qazan.backend.auth.application.PasswordResetService;
 import az.qazan.backend.common.api.ApiResponse;
@@ -51,6 +54,20 @@ public class AuthController {
         return auth.login(body, http);
     }
 
+    @Operation(summary = "First registration step: is this phone already registered?")
+    @PostMapping("/phone/start")
+    public PhoneStartResponse phoneStart(@Valid @RequestBody PhoneStartRequest body) {
+        // SMS verification plugs in here later.
+        return new PhoneStartResponse(users.phoneRegistered(body.phone()), false);
+    }
+
+    @Operation(summary = "Sign in with a Google or Apple ID token")
+    @PostMapping("/social")
+    public AuthResponse social(@Valid @RequestBody SocialLoginRequest body,
+                               HttpServletRequest http) {
+        return auth.socialLogin(body, http);
+    }
+
     @Operation(summary = "Rotate a refresh token for a fresh pair")
     @PostMapping("/refresh")
     public AuthResponse refresh(@Valid @RequestBody RefreshRequest body,
@@ -63,7 +80,7 @@ public class AuthController {
     public ResponseEntity<ApiResponse<Void>> forgotPassword(
             @Valid @RequestBody ForgotPasswordRequest body) {
         passwordReset.request(body.email());
-        // Always 200 — never reveal whether the email is registered.
+        // 404 AUTH_EMAIL_NOT_REGISTERED when no active account uses it.
         return ResponseEntity.ok(ApiResponse.message("OK"));
     }
 

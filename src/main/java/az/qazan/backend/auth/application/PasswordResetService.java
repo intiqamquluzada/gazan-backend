@@ -3,6 +3,7 @@ package az.qazan.backend.auth.application;
 import az.qazan.backend.auth.domain.PasswordResetToken;
 import az.qazan.backend.auth.domain.PasswordResetTokenRepository;
 import az.qazan.backend.auth.domain.RefreshTokenRepository;
+import az.qazan.backend.common.exception.AppException;
 import az.qazan.backend.common.exception.ErrorCode;
 import az.qazan.backend.common.exception.BadRequestException;
 import az.qazan.backend.common.mail.MailService;
@@ -30,6 +31,8 @@ public class PasswordResetService {
 
     private static final SecureRandom RNG = new SecureRandom();
     private static final Duration TTL = Duration.ofMinutes(15);
+    private static final Duration RESEND_GAP = Duration.ofMinutes(1);
+    private static final int MAX_ATTEMPTS = 5;
 
     private final UserRepository users;
     private final PasswordResetTokenRepository tokens;
@@ -37,11 +40,26 @@ public class PasswordResetService {
     private final PasswordEncoder passwordEncoder;
     private final MailService mail;
 
+    /**
+     * Emails a reset code. Product decision (2026-11-15): tell the user when
+     * no active account uses this email instead of a silent success — the
+     * auth rate limit keeps address probing slow.
+     */
     @Transactional
     public void request(String email) {
-        users.findByEmailIgnoreCase(email.trim()).ifPresent(user -> {
-            if (!user.isActive()) {
-                return; // deleted/disabled accounts cannot reset
+        az.qazan.backend.user.domain.User found = users.findByEmailIgnoreCase(email.trim())
+                .filter(az.qazan.backend.user.domain.User::isActive)
+                .orElseThrow(() -> new az.qazan.backend.common.exception.AppException(
+                        az.qazan.backend.common.exception.ErrorCode.AUTH_EMAIL_NOT_REGISTERED));
+        java.util.Optional.of(found).ifPresent(user -> {
+            // One code a minute, so asking again cannot refill the attempts.
+            boolean tooSoon = tokens
+                    .findTopByUserIdAndUsedAtIsNullOrderByCreatedAtDesc(user.getId())
+                    .filter(t -> t.getCreatedAt() != null
+                            && t.getCreatedAt().isAfter(Instant.now().minus(RESEND_GAP)))
+                    .isPresent();
+            if (tooSoon) {
+                return;
             }
             // Only one live code per user.
             tokens.deleteByUserId(user.getId());
@@ -53,12 +71,13 @@ public class PasswordResetService {
                     .expiresAt(Instant.now().plus(TTL))
                     .build());
 
-            mail.sendPasswordResetCode(user.getEmail(), code);
+            mail.sendPasswordResetCode(user.getEmail(), code, user.getLocale());
         });
         // No-op for unknown emails — response is identical either way.
     }
 
-    @Transactional
+    /** A wrong guess must still commit its attempt, hence no rollback. */
+    @Transactional(noRollbackFor = AppException.class)
     public void confirm(String email, String code, String newPassword) {
         User user = users.findByEmailIgnoreCase(email.trim())
                 .orElseThrow(() -> new BadRequestException(ErrorCode.AUTH_RESET_CODE_INVALID));
@@ -67,8 +86,12 @@ public class PasswordResetService {
                 .findTopByUserIdAndUsedAtIsNullOrderByCreatedAtDesc(user.getId())
                 .orElseThrow(() -> new BadRequestException(ErrorCode.AUTH_RESET_CODE_INVALID));
 
+        if (token.getAttempts() >= MAX_ATTEMPTS) {
+            throw new AppException(ErrorCode.AUTH_RESET_LOCKED);
+        }
         boolean expired = token.getExpiresAt().isBefore(Instant.now());
         if (expired || !passwordEncoder.matches(code, token.getCodeHash())) {
+            token.setAttempts(token.getAttempts() + 1);
             throw new BadRequestException(ErrorCode.AUTH_RESET_CODE_INVALID);
         }
 

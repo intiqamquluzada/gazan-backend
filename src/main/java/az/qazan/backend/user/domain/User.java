@@ -15,6 +15,7 @@ import lombok.Setter;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.UUID;
 
 @Entity
 @Table(
@@ -68,6 +69,24 @@ public class User extends BaseEntity {
 
     @Column(name = "last_login_at")
     private Instant lastLoginAt;
+
+    @Column(name = "google_sub", length = 255)
+    private String googleSub;
+
+    @Column(name = "apple_sub", length = 255)
+    private String appleSub;
+
+    /** Apple refresh token, revoked when the account is deleted. */
+    @Column(name = "apple_refresh_token", length = 512)
+    private String appleRefreshToken;
+
+    /** Stays null until SMS verification ships. */
+    @Column(name = "phone_verified_at")
+    private Instant phoneVerifiedAt;
+
+    /** The business a {@link Role#CASHIER} works for. */
+    @Column(name = "staff_company_id")
+    private UUID staffCompanyId;
 
     public void touchLastLogin() {
         this.lastLoginAt = Instant.now();

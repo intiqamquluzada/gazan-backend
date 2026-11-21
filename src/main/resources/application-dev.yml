@@ -12,4 +12,3 @@ logging:
     az.qazan.backend: DEBUG
     org.springframework.security: INFO
     org.hibernate.SQL: DEBUG
-    org.hibernate.orm.jdbc.bind: TRACE

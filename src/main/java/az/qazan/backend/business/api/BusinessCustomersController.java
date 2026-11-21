@@ -2,7 +2,9 @@ package az.qazan.backend.business.api;
 
 import az.qazan.backend.business.api.dto.BusinessCustomerDetailResponse;
 import az.qazan.backend.business.api.dto.BusinessCustomerResponse;
+import az.qazan.backend.business.api.dto.CustomerLookupResponse;
 import az.qazan.backend.business.application.BusinessCustomerDetailService;
+import az.qazan.backend.business.application.BusinessStaffService;
 import az.qazan.backend.business.application.BusinessCustomersService;
 import az.qazan.backend.common.security.AppUserPrincipal;
 import az.qazan.backend.common.security.CurrentUser;
@@ -14,6 +16,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -28,6 +31,7 @@ public class BusinessCustomersController {
 
     private final BusinessCustomersService customers;
     private final BusinessCustomerDetailService customerDetail;
+    private final BusinessStaffService staff;
 
     @Operation(summary = "Customers who hold a loyalty card at the owner's business")
     @PreAuthorize("hasRole('BUSINESS_OWNER') or hasRole('ADMIN')")
@@ -35,6 +39,15 @@ public class BusinessCustomersController {
     public List<BusinessCustomerResponse> customers(
             @CurrentUser AppUserPrincipal me) {
         return customers.customersForOwner(me.getId());
+    }
+
+    @Operation(summary = "Find a customer by phone at the till")
+    @PreAuthorize("hasRole('BUSINESS_OWNER') or hasRole('CASHIER')")
+    @GetMapping("/customers/lookup")
+    public CustomerLookupResponse lookup(
+            @CurrentUser AppUserPrincipal me,
+            @RequestParam String phone) {
+        return staff.lookup(me.getId(), phone);
     }
 
     @Operation(summary = "Rich detail for one customer at the owner's business")

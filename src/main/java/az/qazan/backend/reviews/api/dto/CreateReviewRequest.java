@@ -9,7 +9,7 @@ public record CreateReviewRequest(
         @Max(value = 5, message = "{validation.review.rating.range}")
         int rating,
 
-        @Size(max = 1000)
+        @Size(max = 500)
         String comment
 ) {
 }
