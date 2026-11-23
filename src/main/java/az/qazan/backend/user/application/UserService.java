@@ -7,6 +7,7 @@ import az.qazan.backend.common.exception.NotFoundException;
 import az.qazan.backend.common.exception.UnauthorizedException;
 import az.qazan.backend.push.domain.DeviceTokenRepository;
 import az.qazan.backend.user.api.dto.ChangePasswordRequest;
+import az.qazan.backend.user.api.dto.NotificationPrefsRequest;
 import az.qazan.backend.user.api.dto.UpdateProfileRequest;
 import az.qazan.backend.user.domain.AppLocale;
 import az.qazan.backend.user.domain.Role;
@@ -116,12 +117,32 @@ public class UserService {
     }
 
     @Transactional
+    public User updateNotificationPrefs(UUID userId, NotificationPrefsRequest req) {
+        User u = getById(userId);
+        if (req.rewards() != null) u.setNotifyRewards(req.rewards());
+        if (req.offers() != null) u.setNotifyOffers(req.offers());
+        if (req.weekly() != null) u.setNotifyWeekly(req.weekly());
+        if (req.marketing() != null) u.setNotifyMarketing(req.marketing());
+        return u;
+    }
+
+    @Transactional
     public void changePassword(UUID userId, ChangePasswordRequest req) {
         User u = getById(userId);
-        if (!passwordEncoder.matches(req.currentPassword(), u.getPasswordHash())) {
-            throw new UnauthorizedException(ErrorCode.USER_PASSWORD_MISMATCH);
+        // Google / Apple accounts have only a random hash: they set their
+        // first password without a "current" one (the session proves who
+        // they are).
+        if (u.isPasswordSet()) {
+            String current = req.currentPassword();
+            if (current == null || current.isEmpty()
+                    || !passwordEncoder.matches(current, u.getPasswordHash())) {
+                throw new UnauthorizedException(ErrorCode.USER_PASSWORD_MISMATCH);
+            }
         }
         u.setPasswordHash(passwordEncoder.encode(req.newPassword()));
+        u.setPasswordSet(true);
+        // Signs out every other device; the caller issues this device a
+        // fresh session so the user is not thrown out a few minutes later.
         refreshRepository.revokeAllForUser(u, Instant.now());
     }
 
@@ -182,6 +203,7 @@ public class UserService {
     public void resetPassword(UUID userId, String newRawPassword) {
         User u = getById(userId);
         u.setPasswordHash(passwordEncoder.encode(newRawPassword));
+        u.setPasswordSet(true);
         refreshRepository.revokeAllForUser(u, Instant.now());
     }
 

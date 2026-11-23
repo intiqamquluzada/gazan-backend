@@ -49,6 +49,22 @@ public class PushService {
         pushToUsers(List.of(userId), title, body, OPEN_INBOX);
     }
 
+    /** Like {@link #pushToUsers}, but skips users who turned the category off. */
+    @Transactional(readOnly = true)
+    public void pushToUsers(Collection<UUID> userIds, String title, String body,
+                            Map<String, String> data, PushCategory category) {
+        if (userIds == null || userIds.isEmpty()) {
+            return;
+        }
+        List<String> targets = switch (category) {
+            case REWARDS -> tokens.findTokensWantingRewards(userIds);
+            case ALWAYS -> tokenValues(tokens.findByUserIdIn(userIds));
+            // Offers and marketing never go to a hand-picked list of users.
+            case OFFERS, MARKETING -> throw new IllegalArgumentException(category.name());
+        };
+        sender.send(targets, title, body, data);
+    }
+
     @Transactional(readOnly = true)
     public void pushToUsers(Collection<UUID> userIds, String title, String body,
                             Map<String, String> data) {
@@ -61,12 +77,12 @@ public class PushService {
     /** Everyone holding a loyalty card at the venue. */
     @Transactional(readOnly = true)
     public void pushToCardholders(UUID companyId, String title, String body) {
-        sender.send(tokens.findTokensOfCardholders(companyId), title, body, OPEN_INBOX);
+        sender.send(tokens.findTokensOfCardholdersWantingOffers(companyId), title, body, OPEN_INBOX);
     }
 
     @Transactional(readOnly = true)
     public void pushToAll(String title, String body) {
-        sender.send(tokenValues(tokens.findAll()), title, body, OPEN_INBOX);
+        sender.send(tokens.findTokensWantingMarketing(), title, body, OPEN_INBOX);
     }
 
     private static List<String> tokenValues(List<DeviceToken> list) {

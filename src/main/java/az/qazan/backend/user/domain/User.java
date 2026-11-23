@@ -100,6 +100,31 @@ public class User extends BaseEntity {
     @Column(name = "totp_last_step")
     private Long totpLastStep;
 
+    /** False while the account only has a random hash (Google / Apple sign-up). */
+    @Builder.Default
+    @Column(name = "password_set", nullable = false)
+    private boolean passwordSet = true;
+
+    /** Push: coins, stamps and gifts on the user's own cards. */
+    @Builder.Default
+    @Column(name = "notify_rewards", nullable = false)
+    private boolean notifyRewards = true;
+
+    /** Push: promotions from venues where the user holds a card. */
+    @Builder.Default
+    @Column(name = "notify_offers", nullable = false)
+    private boolean notifyOffers = true;
+
+    /** Push: weekly summary. */
+    @Builder.Default
+    @Column(name = "notify_weekly", nullable = false)
+    private boolean notifyWeekly = false;
+
+    /** Push: Qazan-wide announcements and campaigns. */
+    @Builder.Default
+    @Column(name = "notify_marketing", nullable = false)
+    private boolean notifyMarketing = false;
+
     public void touchLastLogin() {
         this.lastLoginAt = Instant.now();
     }

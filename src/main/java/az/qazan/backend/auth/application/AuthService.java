@@ -156,6 +156,7 @@ public class AuthService {
                         ? email.trim().toLowerCase()
                         : (apple ? "apple." : "google.") + identity.subject() + "@social.qazan.az")
                 .passwordHash(passwordEncoder.encode(UUID.randomUUID().toString()))
+                .passwordSet(false)
                 .fullName(name.length() > 120 ? name.substring(0, 120) : name.trim())
                 .role(Role.CUSTOMER)
                 .locale(AppLocale.AZ)
@@ -196,6 +197,14 @@ public class AuthService {
     @Transactional
     public void logoutAllSessions(User user) {
         refreshRepo.revokeAllForUser(user, Instant.now());
+    }
+
+    /** A fresh session for this device, e.g. right after a password change. */
+    @Transactional
+    public AuthResponse issueSession(UUID userId, HttpServletRequest http) {
+        User user = users.findById(userId)
+                .orElseThrow(() -> new UnauthorizedException(ErrorCode.AUTH_TOKEN_INVALID));
+        return issueTokens(user, http);
     }
 
     // ─────────────────────────── helpers ───────────────────────────

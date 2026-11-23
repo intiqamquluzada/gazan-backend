@@ -4,7 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 public record ChangePasswordRequest(
-        @NotBlank(message = "{validation.password.current.required}")
+        /** Required unless the account has no password yet (Google / Apple). */
         String currentPassword,
 
         @NotBlank(message = "{validation.password.new.required}")
