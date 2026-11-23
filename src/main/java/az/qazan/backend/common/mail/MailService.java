@@ -59,7 +59,7 @@ public class MailService {
 
     private void sendCode(String email, String code, CodeTexts t) {
         String text = t.heading + "\n\n" + t.intro + "\n\n    " + code + "\n\n"
-                + t.validity + "\n" + t.security + "\n" + t.ignore + "\n\n— Qazan";
+                + t.validity + " " + t.security + "\n" + t.ignore + "\n\nQazan";
         send(email, t.subject, text, codeHtml(t, code));
     }
 
@@ -72,102 +72,86 @@ public class MailService {
 
         static CodeTexts verify(AppLocale l) {
             return switch (l) {
-                case TR -> new CodeTexts("tr", "Qazan — e-posta doğrulama kodun",
+                case TR -> new CodeTexts("tr", "Qazan doğrulama kodun",
                         "Doğrulama kodun:",
                         "E-postanı doğrula",
-                        "Qazan'a hoş geldin! Kaydını tamamlamak için bu kodu "
-                                + "uygulamaya gir:",
+                        "Qazan'a hoş geldin! Kaydını bitirmek için bu kodu uygulamaya gir:",
                         "Doğrulama kodu",
-                        "Kod 15 dakika geçerlidir",
-                        "Bu kodu kimseyle paylaşma — Qazan ekibi onu asla sormaz.",
-                        "Kaydı sen başlatmadıysan bu e-postayı dikkate alma; "
-                                + "hesap oluşturulmayacak.",
+                        "Kod 15 dakika geçerli.",
+                        "Kodu kimseyle paylaşma.",
+                        "Kaydı sen başlatmadıysan bu e-postayı dikkate alma.",
                         "Sevdiğin yerlerden kazan");
-                case EN -> new CodeTexts("en", "Qazan — your email verification code",
+                case EN -> new CodeTexts("en", "Your Qazan verification code",
                         "Your verification code:",
                         "Verify your email",
-                        "Welcome to Qazan! Enter this code in the app to finish "
-                                + "creating your account:",
+                        "Welcome to Qazan! Enter this code in the app to finish signing up:",
                         "Verification code",
-                        "The code is valid for 15 minutes",
-                        "Never share this code — the Qazan team will never ask for it.",
-                        "If you didn't start signing up, just ignore this email — "
-                                + "no account will be created.",
+                        "The code works for 15 minutes.",
+                        "Don't share it with anyone.",
+                        "If you didn't sign up, you can ignore this email.",
                         "Earn at the places you love");
-                case RU -> new CodeTexts("ru", "Qazan — код подтверждения почты",
+                case RU -> new CodeTexts("ru", "Код подтверждения Qazan",
                         "Ваш код подтверждения:",
                         "Подтвердите почту",
                         "Добро пожаловать в Qazan! Введите этот код в приложении, "
-                                + "чтобы завершить регистрацию:",
+                                + "чтобы закончить регистрацию:",
                         "Код подтверждения",
-                        "Код действует 15 минут",
-                        "Никому не сообщайте этот код — команда Qazan никогда его "
-                                + "не спрашивает.",
-                        "Если вы не начинали регистрацию, просто проигнорируйте "
-                                + "это письмо — аккаунт не будет создан.",
+                        "Код действует 15 минут.",
+                        "Никому его не сообщайте.",
+                        "Если вы не регистрировались, просто не обращайте внимания на это письмо.",
                         "Зарабатывайте в любимых местах");
-                default -> new CodeTexts("az", "Qazan — e-poçt təsdiq kodun",
+                default -> new CodeTexts("az", "Qazan təsdiq kodu",
                         "Təsdiq kodun:",
                         "E-poçtunu təsdiqlə",
-                        "Qazan-a xoş gəldin! Qeydiyyatı tamamlamaq üçün bu kodu "
-                                + "tətbiqə daxil et:",
+                        "Qazan-a xoş gəldin! Qeydiyyatı bitirmək üçün bu kodu tətbiqə yaz:",
                         "Təsdiq kodu",
-                        "Kod 15 dəqiqə ərzində etibarlıdır",
-                        "Bu kodu heç kimlə paylaşma — Qazan komandası onu heç vaxt "
-                                + "soruşmur.",
-                        "Qeydiyyatı sən başlatmamısansa, bu məktubu nəzərə alma — "
-                                + "hesab yaradılmayacaq.",
+                        "Kod 15 dəqiqə işləyir.",
+                        "Kodu heç kimə vermə.",
+                        "Qeydiyyatı sən başlamamısansa, bu məktuba fikir vermə.",
                         "Sevdiyin yerlərdən qazan");
             };
         }
 
         static CodeTexts reset(AppLocale l) {
             return switch (l) {
-                case TR -> new CodeTexts("tr", "Qazan — şifre sıfırlama kodu",
+                case TR -> new CodeTexts("tr", "Qazan şifre sıfırlama kodun",
                         "Şifre sıfırlama kodun:",
                         "Şifreni sıfırla",
-                        "Qazan hesabın için bir şifre sıfırlama isteği aldık. "
-                                + "Uygulamaya aşağıdaki kodu gir:",
+                        "Qazan hesabın için şifre sıfırlama isteği aldık. Bu kodu uygulamaya gir:",
                         "Doğrulama kodu",
-                        "Kod 15 dakika geçerlidir",
-                        "Bu kodu kimseyle paylaşma — Qazan ekibi onu asla sormaz.",
-                        "Bu isteği sen yapmadıysan bu e-postayı dikkate alma; "
-                                + "şifren değişmeyecek.",
+                        "Kod 15 dakika geçerli.",
+                        "Kodu kimseyle paylaşma.",
+                        "Bu isteği sen yapmadıysan e-postayı dikkate alma. Şifren değişmeyecek.",
                         "Sevdiğin yerlerden kazan");
-                case EN -> new CodeTexts("en", "Qazan — password reset code",
+                case EN -> new CodeTexts("en", "Your Qazan password reset code",
                         "Your password reset code:",
                         "Reset your password",
-                        "We received a request to reset the password of your "
-                                + "Qazan account. Enter this code in the app:",
+                        "Someone asked to reset the password for your Qazan account. "
+                                + "Enter this code in the app:",
                         "Verification code",
-                        "The code is valid for 15 minutes",
-                        "Never share this code — the Qazan team will never ask for it.",
-                        "If you didn't ask for this, you can ignore this email — "
-                                + "your password won't change.",
+                        "The code works for 15 minutes.",
+                        "Don't share it with anyone.",
+                        "If it wasn't you, ignore this email. Your password stays the same.",
                         "Earn at the places you love");
-                case RU -> new CodeTexts("ru", "Qazan — код для сброса пароля",
+                case RU -> new CodeTexts("ru", "Код для сброса пароля Qazan",
                         "Код для сброса пароля:",
                         "Сброс пароля",
-                        "Мы получили запрос на сброс пароля вашего аккаунта "
-                                + "Qazan. Введите этот код в приложении:",
+                        "Мы получили запрос на сброс пароля вашего аккаунта Qazan. "
+                                + "Введите этот код в приложении:",
                         "Код подтверждения",
-                        "Код действует 15 минут",
-                        "Никому не сообщайте этот код — команда Qazan никогда его "
-                                + "не спрашивает.",
-                        "Если вы не запрашивали сброс, просто проигнорируйте "
-                                + "это письмо — пароль не изменится.",
+                        "Код действует 15 минут.",
+                        "Никому его не сообщайте.",
+                        "Если это были не вы, просто не обращайте внимания на письмо. "
+                                + "Пароль останется прежним.",
                         "Зарабатывайте в любимых местах");
-                default -> new CodeTexts("az", "Qazan — şifrə sıfırlama kodu",
+                default -> new CodeTexts("az", "Qazan şifrə sıfırlama kodu",
                         "Şifrə sıfırlama kodun:",
                         "Şifrəni sıfırla",
-                        "Qazan hesabın üçün şifrə sıfırlama sorğusu aldıq. "
-                                + "Tətbiqə aşağıdakı kodu daxil et:",
+                        "Hesabın üçün şifrə sıfırlama istəyi gəldi. Bu kodu tətbiqə yaz:",
                         "Təsdiq kodu",
-                        "Kod 15 dəqiqə ərzində etibarlıdır",
-                        "Bu kodu heç kimlə paylaşma — Qazan komandası onu heç vaxt "
-                                + "soruşmur.",
-                        "Bu sorğunu sən etməmisənsə, bu məktubu nəzərə alma — "
-                                + "şifrən dəyişməyəcək.",
+                        "Kod 15 dəqiqə işləyir.",
+                        "Kodu heç kimə vermə.",
+                        "Bunu sən istəməmisənsə, məktuba fikir vermə. Şifrən dəyişməyəcək.",
                         "Sevdiyin yerlərdən qazan");
             };
         }
@@ -227,23 +211,11 @@ public class MailService {
                   <table role="presentation" cellspacing="0" cellpadding="0" border="0" aria-label="%4$s"><tr>%10$s</tr></table>
                  </td></tr>
 
-                 <tr><td align="center" style="padding:18px 24px 8px;">
-                  <table role="presentation" cellspacing="0" cellpadding="0" border="0"><tr>
-                   <td style="background:#FFEDE0;border-radius:999px;padding:8px 16px;font-family:%6$s;font-size:13px;font-weight:700;color:#B54A0C;">&#9201;&nbsp; %11$s</td>
-                  </tr></table>
-                 </td></tr>
+                 <tr><td align="center" style="padding:16px 30px 0;font-family:%6$s;font-size:14px;line-height:1.6;color:#6E6259;">%11$s %12$s</td></tr>
 
-                 <tr><td style="padding:22px 30px 0;"><div style="height:1px;background:#FFE6D3;line-height:1px;font-size:0;">&nbsp;</div></td></tr>
+                 <tr><td style="padding:24px 30px 0;"><div style="height:1px;background:#FFE6D3;line-height:1px;font-size:0;">&nbsp;</div></td></tr>
 
-                 <tr><td style="padding:18px 30px 28px;font-family:%6$s;">
-                  <table role="presentation" width="100%%" cellspacing="0" cellpadding="0" border="0"><tr>
-                   <td width="34" valign="top" style="width:34px;font-size:18px;line-height:1.4;">&#128274;</td>
-                   <td valign="top" style="font-size:13px;line-height:1.55;color:#1F1712;font-weight:600;">%12$s</td>
-                  </tr><tr>
-                   <td width="34" valign="top" style="width:34px;padding-top:10px;font-size:18px;line-height:1.4;">&#9993;&#65039;</td>
-                   <td valign="top" style="padding-top:10px;font-size:13px;line-height:1.55;color:#6E6259;">%13$s</td>
-                  </tr></table>
-                 </td></tr>
+                 <tr><td align="center" style="padding:16px 30px 26px;font-family:%6$s;font-size:13px;line-height:1.6;color:#9A8C82;">%13$s</td></tr>
 
                 </table>
                </td></tr>
