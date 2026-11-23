@@ -33,7 +33,11 @@ public class MediaSecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(s ->
                         s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .cors(Customizer.withDefaults());
+                .cors(Customizer.withDefaults())
+                // Image ids never change content, so let phones cache them
+                // (the controller sends a one-year max-age; Spring Security's
+                // default no-cache header would override it).
+                .headers(h -> h.cacheControl(c -> c.disable()));
         return http.build();
     }
 }
