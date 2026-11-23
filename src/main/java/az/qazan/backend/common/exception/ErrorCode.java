@@ -59,6 +59,7 @@ public enum ErrorCode {
 
     // Companies and coins
     COMPANY_NOT_APPROVED("error.company.not_approved", HttpStatus.FORBIDDEN),
+    BUSINESS_NOT_SET_UP("error.business.not_set_up", HttpStatus.NOT_FOUND),
     COIN_INSUFFICIENT("error.coin.insufficient", HttpStatus.BAD_REQUEST),
     GRANT_CAP_EXCEEDED("error.coin.grant_cap", HttpStatus.BAD_REQUEST),
     // Campaigns and gifts
