@@ -37,6 +37,7 @@ public enum ErrorCode {
     // ── User ───────────────────────────────────────────────────
     USER_NOT_FOUND("error.user.not_found", HttpStatus.NOT_FOUND),
     AUTH_EMAIL_NOT_REGISTERED("error.auth.email_not_registered", HttpStatus.NOT_FOUND),
+    AUTH_EMAIL_NOT_VERIFIED("error.auth.email_not_verified", HttpStatus.BAD_REQUEST),
     USER_PASSWORD_MISMATCH("error.user.password_mismatch", HttpStatus.BAD_REQUEST),
 
     // Reviews

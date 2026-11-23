@@ -6,7 +6,10 @@ import az.qazan.backend.admin.application.AdminStatsService;
 import az.qazan.backend.admin.application.AdminUserService;
 import az.qazan.backend.auth.application.PasswordResetService;
 import az.qazan.backend.auth.domain.PasswordResetToken;
+import az.qazan.backend.auth.domain.EmailVerification;
+import az.qazan.backend.auth.domain.EmailVerificationRepository;
 import az.qazan.backend.auth.domain.PasswordResetTokenRepository;
+import az.qazan.backend.auth.application.EmailVerificationService;
 import az.qazan.backend.business.application.BusinessAnalyticsService;
 import az.qazan.backend.business.application.BusinessCustomerDetailService;
 import az.qazan.backend.business.application.BusinessCustomersService;
@@ -97,6 +100,8 @@ class AuthCoinsNfcIntegrationTests {
     @Autowired CoinTransactionRepository ledger;
     @Autowired RewardClaimRepository claims;
     @Autowired PasswordResetTokenRepository resetTokens;
+    @Autowired EmailVerificationRepository emailCodes;
+    @Autowired EmailVerificationService emailVerification;
     @Autowired PasswordEncoder encoder;
     @Autowired JwtTokenProvider jwt;
     @Autowired CoinService coins;
@@ -153,11 +158,32 @@ class AuthCoinsNfcIntegrationTests {
                 .build());
     }
 
-    private static String registerBody(String role, String phone) {
-        String key = UUID.randomUUID().toString();
+    private String registerBody(String role, String phone) {
+        String email = UUID.randomUUID() + "@test.az";
+        return registerBody(email, role, phone, ticketFor(email));
+    }
+
+    private static String registerBody(String email, String role, String phone, String ticket) {
         String phoneField = phone == null ? "" : "\"phone\":\"" + phone + "\",";
-        return "{\"email\":\"" + key + "@test.az\",\"password\":\"password123\","
-                + "\"fullName\":\"Test User\"," + phoneField + "\"role\":\"" + role + "\"}";
+        String ticketField = ticket == null ? ""
+                : ",\"emailVerificationToken\":\"" + ticket + "\"";
+        return "{\"email\":\"" + email + "\",\"password\":\"password123\","
+                + "\"fullName\":\"Test User\"," + phoneField + "\"role\":\"" + role + "\""
+                + ticketField + "}";
+    }
+
+    /** Seeds a mailed code for {@code email} and trades it for a ticket. */
+    private String ticketFor(String email) {
+        seedEmailCode(email, "123456");
+        return emailVerification.verify(email, "123456");
+    }
+
+    private void seedEmailCode(String email, String code) {
+        emailCodes.save(EmailVerification.builder()
+                .email(email.toLowerCase())
+                .codeHash(encoder.encode(code))
+                .expiresAt(Instant.now().plus(Duration.ofMinutes(15)))
+                .build());
     }
 
     private static NfcTapRequest tapRequest(String token, String uid) {
@@ -305,6 +331,75 @@ class AuthCoinsNfcIntegrationTests {
                 ErrorCode.COIN_INSUFFICIENT);
         coins.spend(customer.getId(), a.getId(), 100, null);
         assertThat(ledger.balanceOf(customer.getId())).isZero();
+    }
+
+    @Test
+    void passwordSignUpNeedsAVerifiedEmail() throws Exception {
+        String email = UUID.randomUUID() + "@test.az";
+        mvc.perform(post("/api/v1/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(registerBody(email, "BUSINESS_OWNER", null, null)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("AUTH_EMAIL_NOT_VERIFIED"));
+
+        // A ticket is bound to the address it was issued for.
+        String other = ticketFor(UUID.randomUUID() + "@test.az");
+        mvc.perform(post("/api/v1/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(registerBody(email, "BUSINESS_OWNER", null, other)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("AUTH_EMAIL_NOT_VERIFIED"));
+    }
+
+    @Test
+    void emailOtpFlowIssuesASingleUseTicket() throws Exception {
+        String email = UUID.randomUUID() + "@Test.az";
+        mvc.perform(post("/api/v1/auth/email/start")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"" + email + "\",\"locale\":\"EN\"}"))
+                .andExpect(status().isOk());
+
+        seedEmailCode(email, "654321");
+        mvc.perform(post("/api/v1/auth/email/verify")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"" + email + "\",\"code\":\"111111\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("AUTH_RESET_CODE_INVALID"));
+        String body = mvc.perform(post("/api/v1/auth/email/verify")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"" + email + "\",\"code\":\"654321\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.verificationToken").isNotEmpty())
+                .andReturn().getResponse().getContentAsString();
+        String ticket = body.replaceAll(".*\"verificationToken\":\"([^\"]+)\".*", "$1");
+
+        mvc.perform(post("/api/v1/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(registerBody(email, "BUSINESS_OWNER", null, ticket)))
+                .andExpect(status().isCreated());
+
+        // Used up, and the address now belongs to an account.
+        mvc.perform(post("/api/v1/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(registerBody(email, "BUSINESS_OWNER", null, ticket)))
+                .andExpect(status().isBadRequest());
+        mvc.perform(post("/api/v1/auth/email/start")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"" + email.toLowerCase() + "\"}"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("AUTH_EMAIL_TAKEN"));
+    }
+
+    @Test
+    void emailCodeLocksAfterFiveWrongTries() {
+        String email = UUID.randomUUID() + "@test.az";
+        seedEmailCode(email, "123456");
+        for (int i = 0; i < 5; i++) {
+            assertCode(() -> emailVerification.verify(email, "000000"),
+                    ErrorCode.AUTH_RESET_CODE_INVALID);
+        }
+        assertCode(() -> emailVerification.verify(email, "123456"),
+                ErrorCode.AUTH_RESET_LOCKED);
     }
 
     @Test

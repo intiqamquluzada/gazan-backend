@@ -32,6 +32,10 @@ public record RegisterRequest(
 
         Role role,
 
-        AppLocale locale
+        AppLocale locale,
+
+        /** Ticket from /auth/email/verify proving the address (required). */
+        @Size(max = 200)
+        String emailVerificationToken
 ) {
 }

@@ -71,6 +71,9 @@ qazan:
       team-id: ${APPLE_TEAM_ID:}
       key-id: ${APPLE_KEY_ID:}
       private-key-file: ${APPLE_PRIVATE_KEY_FILE:}
+  auth:
+    # Password sign-up must pass the email OTP step (/auth/email/*).
+    email-verification-required: ${QAZAN_EMAIL_VERIFICATION_REQUIRED:true}
   coins:
     max-grant: ${QAZAN_COINS_MAX_GRANT:10000}
   rate-limit:
