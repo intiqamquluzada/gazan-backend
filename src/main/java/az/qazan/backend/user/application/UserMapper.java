@@ -27,7 +27,10 @@ public class UserMapper {
                 u.getCreatedAt(),
                 u.getLastLoginAt(),
                 u.getPhone() != null,
-                u.getStaffCompanyId()
+                u.getStaffCompanyId(),
+                u.isPasswordSet(),
+                new UserResponse.NotificationPrefs(u.isNotifyRewards(), u.isNotifyOffers(),
+                        u.isNotifyWeekly(), u.isNotifyMarketing())
         );
     }
 }

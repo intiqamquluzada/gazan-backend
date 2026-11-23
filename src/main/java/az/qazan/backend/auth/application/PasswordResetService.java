@@ -96,6 +96,7 @@ public class PasswordResetService {
         }
 
         user.setPasswordHash(passwordEncoder.encode(newPassword));
+        user.setPasswordSet(true);
         token.setUsedAt(Instant.now());
         // Force re-login everywhere after a reset.
         refreshTokens.revokeAllForUser(user, Instant.now());

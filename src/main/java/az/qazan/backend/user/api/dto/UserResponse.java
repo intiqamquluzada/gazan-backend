@@ -26,6 +26,12 @@ public record UserResponse(
         Instant lastLoginAt,
         /** False until a phone number is on file (e.g. after social sign-in). */
         boolean profileComplete,
-        UUID staffCompanyId
+        UUID staffCompanyId,
+        /** False for Google / Apple accounts that never set a password. */
+        boolean hasPassword,
+        NotificationPrefs notificationPrefs
 ) {
+    public record NotificationPrefs(
+            boolean rewards, boolean offers, boolean weekly, boolean marketing) {
+    }
 }
