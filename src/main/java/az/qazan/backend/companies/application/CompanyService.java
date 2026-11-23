@@ -62,8 +62,10 @@ public class CompanyService {
 
     @Transactional(readOnly = true)
     public Company myCompany(UUID ownerId) {
+        // A new owner has no venue until they fill in the business profile;
+        // the app shows a "set up your business" state for this code.
         return repo.findByOwnerId(ownerId)
-                .orElseThrow(() -> NotFoundException.of(ErrorCode.NOT_FOUND));
+                .orElseThrow(() -> NotFoundException.of(ErrorCode.BUSINESS_NOT_SET_UP));
     }
 
     @Transactional
