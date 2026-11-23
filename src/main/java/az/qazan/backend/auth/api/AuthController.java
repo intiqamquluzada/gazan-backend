@@ -1,6 +1,9 @@
 package az.qazan.backend.auth.api;
 
 import az.qazan.backend.auth.api.dto.AuthResponse;
+import az.qazan.backend.auth.api.dto.EmailStartRequest;
+import az.qazan.backend.auth.api.dto.EmailVerifyRequest;
+import az.qazan.backend.auth.api.dto.EmailVerifyResponse;
 import az.qazan.backend.auth.api.dto.ForgotPasswordRequest;
 import az.qazan.backend.auth.api.dto.LoginRequest;
 import az.qazan.backend.auth.api.dto.PhoneStartRequest;
@@ -10,11 +13,14 @@ import az.qazan.backend.auth.api.dto.RegisterRequest;
 import az.qazan.backend.auth.api.dto.ResetPasswordRequest;
 import az.qazan.backend.auth.api.dto.SocialLoginRequest;
 import az.qazan.backend.auth.application.AuthService;
+import az.qazan.backend.auth.application.EmailVerificationService;
 import az.qazan.backend.auth.application.PasswordResetService;
 import az.qazan.backend.common.api.ApiResponse;
 import az.qazan.backend.common.security.AppUserPrincipal;
 import az.qazan.backend.common.security.CurrentUser;
 import az.qazan.backend.user.application.UserService;
+import az.qazan.backend.user.domain.AppLocale;
+import org.springframework.context.i18n.LocaleContextHolder;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -38,6 +44,24 @@ public class AuthController {
     private final AuthService auth;
     private final UserService users;
     private final PasswordResetService passwordReset;
+    private final EmailVerificationService emailVerification;
+
+    @Operation(summary = "Sign-up step: email a 6-digit code to a new address")
+    @PostMapping("/email/start")
+    public ResponseEntity<ApiResponse<Void>> emailStart(
+            @Valid @RequestBody EmailStartRequest body) {
+        AppLocale locale = body.locale() != null ? body.locale()
+                : AppLocale.fromTag(LocaleContextHolder.getLocale().getLanguage());
+        // 409 AUTH_EMAIL_TAKEN when an account already uses the address.
+        emailVerification.start(body.email(), locale);
+        return ResponseEntity.ok(ApiResponse.message("OK"));
+    }
+
+    @Operation(summary = "Sign-up step: check the emailed code, get a register ticket")
+    @PostMapping("/email/verify")
+    public EmailVerifyResponse emailVerify(@Valid @RequestBody EmailVerifyRequest body) {
+        return new EmailVerifyResponse(emailVerification.verify(body.email(), body.code()));
+    }
 
     @Operation(summary = "Create a new account and return a token pair")
     @PostMapping("/register")

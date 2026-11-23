@@ -22,6 +22,7 @@ import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -52,6 +53,14 @@ public class AuthService {
     private final JwtProperties jwtProperties;
     private final UserRepository users;
     private final SocialTokenVerifier socialTokens;
+    private final EmailVerificationService emailVerification;
+
+    /**
+     * Password sign-up needs a ticket from the email OTP step. Switchable
+     * only so an older app build can be kept working during a rollout.
+     */
+    @Value("${qazan.auth.email-verification-required:true}")
+    private boolean emailVerificationRequired;
 
     /** Spent on unknown accounts so they take as long as a wrong password. */
     private String decoyHash;
@@ -69,6 +78,10 @@ public class AuthService {
         }
         if (role == Role.CUSTOMER && PhoneNumbers.normalize(req.phone()) == null) {
             throw new BadRequestException(ErrorCode.BAD_REQUEST);
+        }
+        if (emailVerificationRequired) {
+            // Same transaction: a sign-up that fails below keeps the ticket.
+            emailVerification.consume(req.email(), req.emailVerificationToken());
         }
         User user = userService.register(
                 req.email(),
