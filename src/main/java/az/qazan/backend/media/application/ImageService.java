@@ -44,10 +44,11 @@ public class ImageService {
         } catch (IOException e) {
             throw new BadRequestException(ErrorCode.BAD_REQUEST);
         }
+        ImageOptimizer.Result small = ImageOptimizer.optimize(data, type.toLowerCase());
         return images.save(StoredImage.builder()
-                .contentType(type.toLowerCase())
-                .sizeBytes(data.length)
-                .bytes(data)
+                .contentType(small.contentType())
+                .sizeBytes(small.bytes().length)
+                .bytes(small.bytes())
                 .build());
     }
 
