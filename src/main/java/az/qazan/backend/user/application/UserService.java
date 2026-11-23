@@ -105,7 +105,11 @@ public class UserService {
         if (req.fullName() != null) u.setFullName(req.fullName().trim());
         if (req.phone() != null) applyPhone(u, req.phone());
         if (req.birthDate() != null) u.setBirthDate(req.birthDate());
-        if (req.avatarUrl() != null) u.setAvatarUrl(req.avatarUrl().trim());
+        if (req.avatarUrl() != null) {
+            // An empty value removes the photo.
+            String avatar = req.avatarUrl().trim();
+            u.setAvatarUrl(avatar.isEmpty() ? null : avatar);
+        }
         if (req.businessName() != null) u.setBusinessName(req.businessName().trim());
         if (req.locale() != null) u.setLocale(req.locale());
         return u;

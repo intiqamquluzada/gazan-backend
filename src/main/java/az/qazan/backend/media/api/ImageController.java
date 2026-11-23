@@ -32,7 +32,9 @@ public class ImageController {
 
     @Operation(summary = "Upload an image; returns its id + relative URL")
     @SecurityRequirement(name = "bearerAuth")
-    @PreAuthorize("hasRole('BUSINESS_OWNER') or hasRole('ADMIN')")
+    // Any signed-in user: customers upload their profile photo too. Size and
+    // type are still enforced by ImageService (5 MB, images only).
+    @PreAuthorize("isAuthenticated()")
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ImageUploadResponse upload(@RequestParam("file") MultipartFile file) {
         StoredImage saved = images.store(file);
