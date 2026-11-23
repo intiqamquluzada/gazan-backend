@@ -174,7 +174,8 @@ public class AuthService {
     public AuthResponse refresh(String refreshTokenValue, HttpServletRequest http) {
         RefreshToken token = refreshRepo.findByTokenValue(refreshTokenValue)
                 .orElseThrow(() -> new UnauthorizedException(ErrorCode.AUTH_REFRESH_INVALID));
-        if (!token.isActive()) {
+        // Web admin sessions rotate only through /admin/auth/refresh.
+        if (!token.isActive() || !RefreshToken.CHANNEL_APP.equals(token.getChannel())) {
             throw new UnauthorizedException(ErrorCode.AUTH_REFRESH_INVALID);
         }
         // Rotation: revoke the presented token and issue a fresh pair.

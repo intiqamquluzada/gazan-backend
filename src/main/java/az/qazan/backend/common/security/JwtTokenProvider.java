@@ -31,6 +31,11 @@ public class JwtTokenProvider {
 
     private static final String CLAIM_EMAIL = "email";
     private static final String CLAIM_ROLE  = "role";
+    /** Set on tokens of the web admin panel, issued after the authenticator code. */
+    public static final String CLAIM_MFA = "mfa";
+    /** Issuer suffix of the short sign-in challenge, so it never works as an access token. */
+    private static final String CHALLENGE_SUFFIX = "#admin-mfa";
+    private static final java.time.Duration CHALLENGE_TTL = java.time.Duration.ofMinutes(5);
     private static final String DEV_SECRET_PREFIX = "dev-only-secret";
 
     private final JwtProperties props;
@@ -59,6 +64,10 @@ public class JwtTokenProvider {
     }
 
     public IssuedToken issueAccessToken(UUID userId, String email, Role role) {
+        return issueAccessToken(userId, email, role, false);
+    }
+
+    public IssuedToken issueAccessToken(UUID userId, String email, Role role, boolean mfa) {
         Instant now = Instant.now();
         Instant exp = now.plus(props.accessTokenTtl());
         String token = Jwts.builder()
@@ -66,11 +75,43 @@ public class JwtTokenProvider {
                 .subject(userId.toString())
                 .claim(CLAIM_EMAIL, email)
                 .claim(CLAIM_ROLE, role.name())
+                .claim(CLAIM_MFA, mfa ? Boolean.TRUE : null)
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(exp))
                 .signWith(signingKey, Jwts.SIG.HS256)
                 .compact();
         return new IssuedToken(token, exp);
+    }
+
+    /** Five-minute proof that the admin's password was right; the code step needs it. */
+    public IssuedToken issueAdminChallenge(UUID userId) {
+        Instant now = Instant.now();
+        Instant exp = now.plus(CHALLENGE_TTL);
+        String token = Jwts.builder()
+                .issuer(props.issuer() + CHALLENGE_SUFFIX)
+                .subject(userId.toString())
+                .id(UUID.randomUUID().toString())
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(exp))
+                .signWith(signingKey, Jwts.SIG.HS256)
+                .compact();
+        return new IssuedToken(token, exp);
+    }
+
+    /** @return the admin's id from a valid challenge, or throws {@link UnauthorizedException}. */
+    public UUID parseAdminChallenge(String token) {
+        try {
+            String sub = Jwts.parser()
+                    .verifyWith(signingKey)
+                    .requireIssuer(props.issuer() + CHALLENGE_SUFFIX)
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload()
+                    .getSubject();
+            return UUID.fromString(sub);
+        } catch (JwtException | IllegalArgumentException e) {
+            throw new UnauthorizedException(ErrorCode.AUTH_TOKEN_INVALID);
+        }
     }
 
     /** @return verified claims, or throws {@link UnauthorizedException}. */

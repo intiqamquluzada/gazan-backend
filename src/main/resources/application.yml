@@ -74,6 +74,19 @@ qazan:
   auth:
     # Password sign-up must pass the email OTP step (/auth/email/*).
     email-verification-required: ${QAZAN_EMAIL_VERIFICATION_REQUIRED:true}
+  admin:
+    # Web admin panel (gazan-web). Its address must also be in CORS_ORIGINS.
+    # Admin sign-ins idle longer than this end on their own.
+    session-idle: ${QAZAN_ADMIN_SESSION_IDLE:PT30M}
+    # Key for the stored authenticator secrets (falls back to JWT_SECRET).
+    totp-key: ${QAZAN_ADMIN_TOTP_KEY:}
+    cookie-secure: ${QAZAN_ADMIN_COOKIE_SECURE:true}
+    # Strict works while the panel and the API share a site (admin.x.az +
+    # api.x.az). Set None (HTTPS only) if they live on unrelated domains.
+    cookie-same-site: ${QAZAN_ADMIN_COOKIE_SAMESITE:Strict}
+    # true: admin endpoints accept only the panel's authenticator sign-ins,
+    # which switches off the admin screens of the mobile app.
+    require-mfa: ${QAZAN_ADMIN_REQUIRE_MFA:false}
   coins:
     max-grant: ${QAZAN_COINS_MAX_GRANT:10000}
   rate-limit:
