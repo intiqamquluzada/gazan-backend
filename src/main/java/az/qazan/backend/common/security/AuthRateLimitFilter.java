@@ -41,14 +41,19 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
             "/api/v1/auth/forgot-password",
             "/api/v1/auth/reset-password",
             "/api/v1/auth/email/start",
-            "/api/v1/auth/email/verify");
+            "/api/v1/auth/email/verify",
+            "/api/v1/admin/auth/login",
+            "/api/v1/admin/auth/verify",
+            "/api/v1/admin/auth/refresh");
 
     /** Routes that send mail or guess a code get a quarter of the budget. */
     private static final Set<String> STRICT = Set.of(
             "/api/v1/auth/forgot-password",
             "/api/v1/auth/reset-password",
             "/api/v1/auth/email/start",
-            "/api/v1/auth/email/verify");
+            "/api/v1/auth/email/verify",
+            "/api/v1/admin/auth/login",
+            "/api/v1/admin/auth/verify");
 
     private record Window(long startedAt, int count) {}
 

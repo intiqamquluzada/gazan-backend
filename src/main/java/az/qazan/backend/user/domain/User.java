@@ -88,6 +88,18 @@ public class User extends BaseEntity {
     @Column(name = "staff_company_id")
     private UUID staffCompanyId;
 
+    /** Encrypted authenticator secret (admins of the web panel only). */
+    @Column(name = "totp_secret", length = 255)
+    private String totpSecret;
+
+    /** When the authenticator was confirmed; null until the first good code. */
+    @Column(name = "totp_enabled_at")
+    private Instant totpEnabledAt;
+
+    /** Last accepted 30-second TOTP step, to refuse a replayed code. */
+    @Column(name = "totp_last_step")
+    private Long totpLastStep;
+
     public void touchLastLogin() {
         this.lastLoginAt = Instant.now();
     }

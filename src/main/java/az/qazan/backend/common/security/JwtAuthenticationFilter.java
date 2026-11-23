@@ -35,6 +35,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtTokenProvider tokens;
     private final UserRepository users;
 
+    /**
+     * When on, admin endpoints accept only tokens from the web panel's
+     * authenticator sign-in (the mobile app's admin screens stop working).
+     */
+    @org.springframework.beans.factory.annotation.Value("${qazan.admin.require-mfa:false}")
+    private boolean adminRequiresMfa;
+
     @Override
     protected void doFilterInternal(
             @NonNull HttpServletRequest req,
@@ -51,7 +58,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 // from the database so blocks and demotions apply at once.
                 User user = users.findById(UUID.fromString(claims.getSubject()))
                         .orElse(null);
-                if (user != null && user.isActive()) {
+                boolean mfaMissing = adminRequiresMfa
+                        && req.getRequestURI().startsWith("/api/v1/admin/")
+                        && !Boolean.TRUE.equals(
+                                claims.get(JwtTokenProvider.CLAIM_MFA, Boolean.class));
+                if (user != null && user.isActive() && !mfaMissing) {
                     AppUserPrincipal principal = AppUserPrincipal.builder()
                             .id(user.getId())
                             .email(user.getEmail())

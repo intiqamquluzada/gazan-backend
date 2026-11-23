@@ -38,6 +38,8 @@ public enum ErrorCode {
     USER_NOT_FOUND("error.user.not_found", HttpStatus.NOT_FOUND),
     AUTH_EMAIL_NOT_REGISTERED("error.auth.email_not_registered", HttpStatus.NOT_FOUND),
     AUTH_EMAIL_NOT_VERIFIED("error.auth.email_not_verified", HttpStatus.BAD_REQUEST),
+    ADMIN_TOTP_INVALID("error.admin.totp_invalid", HttpStatus.UNAUTHORIZED),
+    ADMIN_MFA_REQUIRED("error.admin.mfa_required", HttpStatus.UNAUTHORIZED),
     USER_PASSWORD_MISMATCH("error.user.password_mismatch", HttpStatus.BAD_REQUEST),
 
     // Reviews

@@ -55,6 +55,14 @@ public class RefreshToken extends BaseEntity {
     @Column(name = "ip", length = 64)
     private String ip;
 
+    /** {@code APP} for the mobile app, {@code ADMIN_WEB} for the web admin panel. */
+    @Builder.Default
+    @Column(name = "channel", nullable = false, length = 16)
+    private String channel = CHANNEL_APP;
+
+    public static final String CHANNEL_APP = "APP";
+    public static final String CHANNEL_ADMIN_WEB = "ADMIN_WEB";
+
     public boolean isActive() {
         return revokedAt == null && expiresAt.isAfter(Instant.now());
     }

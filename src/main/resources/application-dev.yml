@@ -12,3 +12,8 @@ logging:
     az.qazan.backend: DEBUG
     org.springframework.security: INFO
     org.hibernate.SQL: DEBUG
+
+qazan:
+  admin:
+    # Local panel runs on plain http://localhost.
+    cookie-secure: false

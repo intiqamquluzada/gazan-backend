@@ -20,6 +20,7 @@ public record AdminUserDetailResponse(
         List<Card> cards,
         List<AdminCoinTxnResponse> recentCoins
 ) {
+    @io.swagger.v3.oas.annotations.media.Schema(name = "AdminUserCard")
     public record Card(
             UUID id,
             UUID companyId,
