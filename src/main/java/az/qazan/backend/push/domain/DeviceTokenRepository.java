@@ -24,6 +24,22 @@ public interface DeviceTokenRepository extends JpaRepository<DeviceToken, UUID> 
             + "(select c.user.id from LoyaltyCard c where c.company.id = :companyId)")
     List<String> findTokensOfCardholders(@Param("companyId") UUID companyId);
 
+    /** Tokens of the given users who left rewards pushes on. */
+    @Query("select distinct dt.token from DeviceToken dt, User u "
+            + "where u.id = dt.userId and dt.userId in :userIds and u.notifyRewards = true")
+    List<String> findTokensWantingRewards(@Param("userIds") Collection<UUID> userIds);
+
+    /** Cardholders of the venue who left venue-offer pushes on. */
+    @Query("select distinct dt.token from DeviceToken dt, User u "
+            + "where u.id = dt.userId and u.notifyOffers = true and dt.userId in "
+            + "(select c.user.id from LoyaltyCard c where c.company.id = :companyId)")
+    List<String> findTokensOfCardholdersWantingOffers(@Param("companyId") UUID companyId);
+
+    /** Everyone who left Qazan announcements on. */
+    @Query("select distinct dt.token from DeviceToken dt, User u "
+            + "where u.id = dt.userId and u.notifyMarketing = true")
+    List<String> findTokensWantingMarketing();
+
     @Transactional
     @Modifying
     void deleteByToken(String token);

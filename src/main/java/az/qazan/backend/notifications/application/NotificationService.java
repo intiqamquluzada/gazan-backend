@@ -113,8 +113,10 @@ public class NotificationService {
                 .status(NotificationStatus.APPROVED)
                 .approvedAt(OffsetDateTime.now())
                 .build());
+        // Every localized notice today is about the user's own rewards.
         push.pushToUsers(java.util.List.of(userId), saved.getTitle(), saved.getBody(),
-                data == null ? PushService.OPEN_INBOX : data);
+                data == null ? PushService.OPEN_INBOX : data,
+                az.qazan.backend.push.application.PushCategory.REWARDS);
         return saved;
     }
 

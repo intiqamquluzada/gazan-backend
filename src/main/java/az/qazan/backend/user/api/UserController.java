@@ -1,6 +1,9 @@
 package az.qazan.backend.user.api;
 
-import az.qazan.backend.common.api.ApiResponse;
+import az.qazan.backend.auth.api.dto.AuthResponse;
+import az.qazan.backend.auth.application.AuthService;
+import az.qazan.backend.user.api.dto.NotificationPrefsRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import az.qazan.backend.common.security.AppUserPrincipal;
 import az.qazan.backend.common.security.CurrentUser;
 import az.qazan.backend.user.api.dto.ChangePasswordRequest;
@@ -32,6 +35,7 @@ public class UserController {
 
     private final UserService users;
     private final UserMapper mapper;
+    private final AuthService auth;
 
     @Operation(summary = "Get the signed-in user's profile")
     @GetMapping("/me")
@@ -49,13 +53,26 @@ public class UserController {
         return mapper.toResponse(u);
     }
 
+    /**
+     * Changes (or, for Google / Apple accounts, first sets) the password.
+     * Every other device is signed out; this one gets a fresh session.
+     */
     @Operation(summary = "Change password")
     @PostMapping("/me/change-password")
-    public ResponseEntity<ApiResponse<Void>> changePassword(
+    public AuthResponse changePassword(
             @CurrentUser AppUserPrincipal principal,
-            @Valid @RequestBody ChangePasswordRequest body) {
+            @Valid @RequestBody ChangePasswordRequest body,
+            HttpServletRequest http) {
         users.changePassword(principal.getId(), body);
-        return ResponseEntity.ok(ApiResponse.message("OK"));
+        return auth.issueSession(principal.getId(), http);
+    }
+
+    @Operation(summary = "Which push notifications the user wants")
+    @PutMapping("/me/notification-prefs")
+    public UserResponse updateNotificationPrefs(
+            @CurrentUser AppUserPrincipal principal,
+            @Valid @RequestBody NotificationPrefsRequest body) {
+        return mapper.toResponse(users.updateNotificationPrefs(principal.getId(), body));
     }
 
     @Operation(summary = "Deactivate (soft-delete) the signed-in account")
