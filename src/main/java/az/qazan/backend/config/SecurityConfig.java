@@ -111,6 +111,11 @@ public class SecurityConfig {
     private void writeError(HttpServletResponse res, ErrorCode code, String path)
             throws java.io.IOException {
         res.setStatus(code.getStatus().value());
+        // Without an explicit charset the servlet writer falls back to
+        // ISO-8859-1, which mangles "ü", "ç", "ə" in the Azerbaijani and
+        // Turkish messages. The app then cannot parse the 401, never
+        // refreshes its token and shows "no internet" on every screen.
+        res.setCharacterEncoding(java.nio.charset.StandardCharsets.UTF_8.name());
         res.setContentType(MediaType.APPLICATION_JSON_VALUE);
         ApiError err = new ApiError(
                 code.name(),
